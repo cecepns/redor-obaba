@@ -1,0 +1,71 @@
+/**
+ * Centralized API Endpoints Configuration
+ * Mandatory rule according to AGENTS.md
+ */
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    PROFILE: '/auth/profile',
+    PASSWORD: '/auth/password',
+  },
+
+  DONORS: {
+    LIST: '/donors',
+    STOCK_SUMMARY: '/donors/stock-summary',
+    DETAIL: (id) => `/donors/${id}`,
+    UPDATE_STATUS: (id) => `/donors/${id}/status`,
+    DELETE: (id) => `/donors/${id}`,
+  },
+
+  BLOOD_REQUESTS: {
+    LIST: '/blood-requests',
+    DETAIL: (id) => `/blood-requests/${id}`,
+    CREATE: '/blood-requests',
+    UPDATE: (id) => `/blood-requests/${id}`,
+    UPDATE_STATUS: (id) => `/blood-requests/${id}/status`,
+    DELETE: (id) => `/blood-requests/${id}`,
+    RESPOND: (id) => `/blood-requests/${id}/respond`,
+    MATCHING_DONORS: (id) => `/blood-requests/${id}/matching-donors`,
+  },
+
+  DONATION_HISTORIES: {
+    LIST: '/donation-histories',
+    CREATE: '/donation-histories',
+    DELETE: (id) => `/donation-histories/${id}`,
+  },
+
+  ACTIVITIES: {
+    LIST: '/activities',
+    DETAIL: (slug) => `/activities/${slug}`,
+    CREATE: '/activities',
+    UPDATE: (id) => `/activities/${id}`,
+    DELETE: (id) => `/activities/${id}`,
+  },
+
+  SCHEDULES: {
+    LIST: '/schedules',
+    CREATE: '/schedules',
+    UPDATE: (id) => `/schedules/${id}`,
+    DELETE: (id) => `/schedules/${id}`,
+  },
+
+  HOSPITALS: {
+    LIST: '/hospitals',
+    CREATE: '/hospitals',
+    UPDATE: (id) => `/hospitals/${id}`,
+    DELETE: (id) => `/hospitals/${id}`,
+  },
+
+  FEEDBACK: {
+    LIST: '/feedbacks',
+    CREATE: '/feedbacks',
+    REPLY: (id) => `/feedbacks/${id}/reply`,
+    DELETE: (id) => `/feedbacks/${id}`,
+  },
+
+  ANALYTICS: {
+    DASHBOARD: '/analytics/dashboard',
+  },
+};
