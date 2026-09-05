@@ -1,91 +1,72 @@
 import React from 'react';
-import { Droplet, Users, ChevronRight } from 'lucide-react';
-import Badge from '../common/Badge';
+import { Droplet } from 'lucide-react';
 
 export const BloodStockCard = ({ stock, onClick }) => {
   const { blood_type, rhesus, ready_count, total_registered, stock_status } = stock;
 
-  const getStatusDetails = () => {
+  const getStatusConfig = () => {
     switch (stock_status) {
       case 'tersedia':
         return {
           label: 'Tersedia',
-          variant: 'tersedia',
-          bgLight: 'bg-emerald-500/10',
-          border: 'border-emerald-200',
-          textColor: 'text-emerald-700',
-          indicator: '🟢',
+          dotColor: 'bg-emerald-500',
+          badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+          cardBorder: 'border-slate-200/90 hover:border-emerald-300',
         };
       case 'sedikit':
         return {
           label: 'Sedikit',
-          variant: 'sedikit',
-          bgLight: 'bg-amber-500/10',
-          border: 'border-amber-200',
-          textColor: 'text-amber-700',
-          indicator: '🟡',
+          dotColor: 'bg-amber-500',
+          badgeBg: 'bg-amber-50 text-amber-700 border-amber-200/80',
+          cardBorder: 'border-slate-200/90 hover:border-amber-300',
         };
       default:
         return {
           label: 'Habis / Butuh',
-          variant: 'habis',
-          bgLight: 'bg-rose-500/10',
-          border: 'border-rose-200',
-          textColor: 'text-rose-700',
-          indicator: '🔴',
+          dotColor: 'bg-rose-500',
+          badgeBg: 'bg-rose-50 text-rose-700 border-rose-200/80',
+          cardBorder: 'border-slate-200/90 hover:border-rose-300',
         };
     }
   };
 
-  const status = getStatusDetails();
+  const status = getStatusConfig();
 
   return (
     <div
       onClick={onClick}
-      className={`group relative bg-white rounded-2xl p-4 sm:p-5 border ${status.border} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col justify-between`}
+      className={`group relative bg-white rounded-2xl p-3.5 sm:p-4 border ${status.cardBorder} shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full min-h-[128px] sm:min-h-[140px]`}
     >
-      {/* Top row: Blood Type and Status Badge */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-11 h-11 rounded-xl bg-blood-600 text-white flex items-center justify-center font-black text-lg shadow-sm shadow-blood-600/20 group-hover:scale-105 transition-transform">
-            {blood_type}
-            <span className="text-xs ml-0.5">{rhesus}</span>
-          </div>
-          <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Golongan
-            </span>
-            <span className="text-sm font-extrabold text-slate-800">
-              {blood_type} ({rhesus === '-' ? 'Rh-' : 'Rh+'})
-            </span>
-          </div>
+      {/* Top row: Blood avatar & status badge */}
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blood-600 to-rose-500 text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+          {blood_type}
+          <span className="text-[10px] sm:text-xs ml-0.5">{rhesus}</span>
         </div>
 
-        <Badge variant={status.variant} size="sm" dot>
-          {status.label}
-        </Badge>
+        <div className={`inline-flex items-center space-x-1 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border ${status.badgeBg} truncate`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor} flex-shrink-0`} />
+          <span className="truncate">{status.label}</span>
+        </div>
       </div>
 
-      {/* Middle: Ready Donor Count */}
-      <div className="my-4 pt-3 border-t border-slate-100 flex items-baseline justify-between">
+      {/* Middle/Bottom: Ready count and total */}
+      <div className="pt-2 sm:pt-3 mt-2 border-t border-slate-100 flex items-end justify-between">
         <div>
-          <span className="text-2xl font-black text-slate-900 tracking-tight">
-            {ready_count}
-          </span>
-          <span className="text-xs font-semibold text-slate-500 ml-1.5">Donor Siap</span>
+          <div className="flex items-baseline space-x-1">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
+              {ready_count}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-500">Siap</span>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+            Total {total_registered} Anggota
+          </p>
         </div>
-        <span className="text-[11px] text-slate-400 font-medium">
-          Total: {total_registered} Anggota
-        </span>
-      </div>
 
-      {/* Bottom: Click to view details */}
-      <div className="flex items-center justify-between text-xs font-semibold text-blood-600 group-hover:text-blood-700 pt-2 border-t border-slate-50">
-        <span className="flex items-center gap-1">
-          <Users className="w-3.5 h-3.5" />
-          Lihat Kontak Donor
-        </span>
-        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+        <div className="w-5 h-5 rounded-lg bg-slate-50 group-hover:bg-blood-50 text-slate-400 group-hover:text-blood-600 flex items-center justify-center transition-colors">
+          <Droplet className="w-3 h-3" />
+        </div>
       </div>
     </div>
   );

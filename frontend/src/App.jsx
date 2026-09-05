@@ -11,6 +11,8 @@ import BloodStock from './pages/BloodStock';
 import BloodRequests from './pages/BloodRequests';
 import RequestDetail from './pages/RequestDetail';
 import ConfirmDonorResponse from './pages/ConfirmDonorResponse';
+import Donations from './pages/Donations';
+import DonorGallery from './pages/DonorGallery';
 import Activities from './pages/Activities';
 import ActivityDetail from './pages/ActivityDetail';
 import ScheduleEvents from './pages/ScheduleEvents';
@@ -95,6 +97,8 @@ export function App() {
             <Route path="activities" element={<Activities />} />
             <Route path="activities/:slug" element={<ActivityDetail />} />
             <Route path="schedules" element={<ScheduleEvents />} />
+            <Route path="donations" element={<Donations />} />
+            <Route path="gallery" element={<DonorGallery />} />
             <Route path="hospitals" element={<HospitalsDirectory />} />
             <Route path="profile" element={<Profile />} />
             <Route path="donor-card" element={<DonorCardPage />} />

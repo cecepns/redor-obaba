@@ -5,8 +5,7 @@ import { api } from '../utils/api';
 import { API_ENDPOINTS } from '../utils/endpoints';
 import {
   Calendar,
-  Hospital,
-  Truck,
+  Camera,
   Users,
   HeartHandshake,
   Droplets,
@@ -18,6 +17,8 @@ import {
   ArrowRight,
   PhoneCall,
   Info,
+  MapPin,
+  Gift,
 } from 'lucide-react';
 import BloodStockCard from '../components/donor/BloodStockCard';
 import ActivityCard from '../components/activity/ActivityCard';
@@ -29,7 +30,7 @@ import Modal from '../components/common/Modal';
 import Badge from '../components/common/Badge';
 
 export const Home = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [stocks, setStocks] = useState([]);
@@ -78,6 +79,11 @@ export const Home = () => {
   };
 
   const handleStockClick = async (stock) => {
+    if (!isAdmin) {
+      // Non-admin will navigate to stock summary page for privacy protection
+      navigate('/stock');
+      return;
+    }
     setSelectedStockGroup(stock);
     setLoadingGroupDonors(true);
     try {
@@ -95,17 +101,21 @@ export const Home = () => {
   };
 
   const handleRequestSuccess = async (data) => {
-    try {
-      const bRes = await api.get(API_ENDPOINTS.BLOOD_REQUESTS.MATCHING_DONORS(data.id));
-      if (bRes.data?.success) {
-        setBroadcastModalData({
-          isOpen: true,
-          request: bRes.data.request,
-          matchingDonors: bRes.data.matchingDonors,
-          broadcastText: bRes.data.broadcastText,
-        });
+    if (isAdmin) {
+      try {
+        const bRes = await api.get(API_ENDPOINTS.BLOOD_REQUESTS.MATCHING_DONORS(data.id));
+        if (bRes.data?.success) {
+          setBroadcastModalData({
+            isOpen: true,
+            request: bRes.data.request,
+            matchingDonors: bRes.data.matchingDonors,
+            broadcastText: bRes.data.broadcastText,
+          });
+        }
+      } catch (err) {
+        navigate('/requests');
       }
-    } catch (err) {
+    } else {
       navigate('/requests');
     }
     fetchHomeData();
@@ -113,13 +123,19 @@ export const Home = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5">
-      {/* 1. Clean Minimal Hero Banner (Clean White Card with Subtle Shadow) */}
+      {/* 1. Clean Minimal Hero Banner (Clean White Card with Subtle Shadow & Location) */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="max-w-2xl space-y-3">
-            <div className="inline-flex items-center space-x-1.5 bg-blood-50 border border-blood-100 text-blood-700 text-xs font-bold px-3 py-1 rounded-full">
-              <Sparkles className="w-3.5 h-3.5 text-blood-600" />
-              <span>Komunitas Siaga Donor Darah Relawan</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center space-x-1.5 bg-blood-50 border border-blood-100 text-blood-700 text-xs font-bold px-3 py-1 rounded-full">
+                <Sparkles className="w-3.5 h-3.5 text-blood-600" />
+                <span>Komunitas Siaga Donor Darah Relawan</span>
+              </div>
+              <div className="inline-flex items-center space-x-1.5 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1 rounded-full">
+                <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                <span>Kab. Tangerang & Sekitarnya</span>
+              </div>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 leading-tight">
@@ -217,7 +233,7 @@ export const Home = () => {
         </div>
       )}
 
-      {/* 3. Quick Action Grid Menu (Clean White Cards) */}
+      {/* 3. Quick Action Grid Menu (Clean White Cards: Jadwal Donor, Donasi, Galeri Donor, Info Komunitas) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Link
           to="/schedules"
@@ -231,25 +247,25 @@ export const Home = () => {
         </Link>
 
         <Link
-          to="/hospitals"
+          to="/donations"
           className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all text-center"
         >
           <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-            <Hospital className="w-5 h-5" />
+            <HeartHandshake className="w-5 h-5" />
           </div>
-          <span className="text-xs sm:text-sm font-bold text-slate-800">Rumah Sakit</span>
-          <span className="text-[10px] text-slate-400 mt-0.5">Faskes & RS Darurat</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-800">Donasi</span>
+          <span className="text-[10px] text-slate-400 mt-0.5">Bantuan Kemanusiaan</span>
         </Link>
 
         <Link
-          to="/hospitals?type=ambulance"
+          to="/gallery"
           className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all text-center"
         >
           <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-            <Truck className="w-5 h-5" />
+            <Camera className="w-5 h-5" />
           </div>
-          <span className="text-xs sm:text-sm font-bold text-slate-800">Ambulans Siaga</span>
-          <span className="text-[10px] text-slate-400 mt-0.5">Layanan Darurat</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-800">Galeri Donor</span>
+          <span className="text-[10px] text-slate-400 mt-0.5">Dokumentasi Relawan</span>
         </Link>
 
         <Link

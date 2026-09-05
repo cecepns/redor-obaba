@@ -3,13 +3,14 @@ import { api } from '../../utils/api';
 import { API_ENDPOINTS } from '../../utils/endpoints';
 import { useDebounce } from '../../hooks/useDebounce';
 import { usePagination } from '../../hooks/usePagination';
-import { HeartHandshake, Search, Edit, Trash2, CheckCircle2, Hospital, Phone, Users, ExternalLink } from 'lucide-react';
+import { HeartHandshake, Search, Edit, Trash2, CheckCircle2, Hospital, Phone, Users, ExternalLink, Share2 } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
 import Skeleton from '../../components/common/Skeleton';
 import EmptyState from '../../components/common/EmptyState';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Badge from '../../components/common/Badge';
+import WhatsAppBroadcastModal from '../../components/request/WhatsAppBroadcastModal';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
@@ -29,6 +30,30 @@ export const AdminRequests = () => {
   const [editStatus, setEditStatus] = useState('mendesak');
   const [editBagsFulfilled, setEditBagsFulfilled] = useState(0);
   const [saving, setSaving] = useState(false);
+
+  // Broadcast modal state
+  const [broadcastData, setBroadcastData] = useState({
+    isOpen: false,
+    request: null,
+    matchingDonors: [],
+    broadcastText: '',
+  });
+
+  const handleOpenBroadcast = async (req) => {
+    try {
+      const res = await api.get(API_ENDPOINTS.BLOOD_REQUESTS.MATCHING_DONORS(req.id));
+      if (res.data?.success) {
+        setBroadcastData({
+          isOpen: true,
+          request: res.data.request || req,
+          matchingDonors: res.data.matchingDonors || [],
+          broadcastText: res.data.broadcastText || '',
+        });
+      }
+    } catch (err) {
+      toast.error('Gagal memuat data broadcast WhatsApp.');
+    }
+  };
 
   // Delete dialog
   const [deleteId, setDeleteId] = useState(null);
@@ -193,10 +218,18 @@ export const AdminRequests = () => {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenBroadcast(req)}
+                          className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Format Broadcast WA & Data Donor"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </button>
                         <Link
                           to={`/requests/${req.id}`}
                           className="p-1.5 text-slate-600 hover:text-blood-600 hover:bg-slate-100 rounded-lg transition-colors"
-                          title="Lihat Detail Pasien & Matching"
+                          title="Lihat Detail Pasien"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Link>
@@ -305,6 +338,15 @@ export const AdminRequests = () => {
         confirmText="Ya, Hapus"
         type="danger"
         isLoading={deleting}
+      />
+
+      {/* WhatsApp Broadcast Modal (Admin Only) */}
+      <WhatsAppBroadcastModal
+        isOpen={broadcastData.isOpen}
+        onClose={() => setBroadcastData((prev) => ({ ...prev, isOpen: false }))}
+        request={broadcastData.request}
+        matchingDonors={broadcastData.matchingDonors}
+        broadcastText={broadcastData.broadcastText}
       />
     </div>
   );

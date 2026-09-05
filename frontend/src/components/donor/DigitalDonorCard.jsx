@@ -1,26 +1,10 @@
 import React from 'react';
-import { Droplet, Award, ShieldCheck, Calendar, MapPin, QrCode } from 'lucide-react';
-import Badge from '../common/Badge';
+import { Droplet, ShieldCheck, MapPin, QrCode } from 'lucide-react';
 
 export const DigitalDonorCard = ({ user }) => {
   if (!user) return null;
 
-  const bloodGroup = `${user.blood_type || 'O'}${user.rhesus || '+'}`;
-  const totalDonations = user.total_donations || 0;
-  
-  // Award level based on donations
-  let donorLevel = 'Pendonor Pemula';
-  let badgeColor = 'bg-slate-100 text-slate-700';
-  if (totalDonations >= 25) {
-    donorLevel = 'Ksatria Darah Utama (25+ Donor)';
-    badgeColor = 'bg-amber-100 text-amber-800 border-amber-300';
-  } else if (totalDonations >= 10) {
-    donorLevel = 'Pendonor Emas (10+ Donor)';
-    badgeColor = 'bg-yellow-100 text-yellow-800 border-yellow-300';
-  } else if (totalDonations >= 5) {
-    donorLevel = 'Pendonor Perak (5+ Donor)';
-    badgeColor = 'bg-blue-100 text-blue-800 border-blue-300';
-  }
+  const bloodGroup = `${user.blood_type || 'B'}${user.rhesus || '+'}`;
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-blood-950 text-white p-6 sm:p-7 shadow-2xl border border-white/10">
@@ -46,59 +30,29 @@ export const DigitalDonorCard = ({ user }) => {
         </div>
       </div>
 
-      {/* Main Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-        <div className="space-y-1.5">
+      {/* Main Member Info & Clean Blood Type Badge */}
+      <div className="flex items-center justify-between gap-4 relative z-10 my-4">
+        <div className="space-y-1">
           <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Nama Anggota</p>
           <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">{user.name}</h3>
           <p className="text-xs text-slate-300 font-mono tracking-wider">{user.donor_card_no || 'OBABA-DNR-000000'}</p>
         </div>
 
-        {/* Large Blood Type Avatar */}
-        <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/20 self-start sm:self-auto shadow-inner">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blood-600 to-rose-500 flex items-center justify-center text-white font-black text-xl shadow-md">
-            {bloodGroup}
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-300 uppercase font-semibold">Golongan Darah</p>
-            <p className="text-xs font-bold text-white">Rhesus: {user.rhesus === '-' ? 'Negatif (-)' : 'Positif (+)'}</p>
-          </div>
+        {/* Clean, Non-bulky Blood Type Display (e.g. B+) */}
+        <div className="flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-blood-600 to-rose-500 text-white font-black text-2xl sm:text-3xl shadow-lg shadow-blood-600/30 border border-white/20 flex-shrink-0">
+          <span>{bloodGroup}</span>
         </div>
       </div>
 
-      {/* Card Details Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-5 pt-4 border-t border-white/10 text-xs relative z-10">
-        <div>
-          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Total Donasi</span>
-          <span className="font-extrabold text-white text-base flex items-center gap-1.5 mt-0.5">
-            <Award className="w-4 h-4 text-amber-400" />
-            {totalDonations} Kali
-          </span>
+      {/* Bottom Footer: Domisili on Left, SCAN AT PMI on Right */}
+      <div className="flex items-center justify-between pt-4 mt-5 border-t border-white/10 relative z-10 text-xs">
+        <div className="flex items-center space-x-1.5 text-slate-300">
+          <MapPin className="w-4 h-4 text-rose-400 flex-shrink-0" />
+          <span className="font-medium text-xs truncate max-w-[170px] sm:max-w-xs">{user.city || 'Kab. Tangerang'}</span>
         </div>
-        <div>
-          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Donor Terakhir</span>
-          <span className="font-semibold text-slate-200 block mt-0.5">
-            {user.last_donation_date
-              ? new Date(user.last_donation_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-              : 'Belum Ada'}
-          </span>
-        </div>
-        <div className="col-span-2 sm:col-span-1">
-          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Domisili</span>
-          <span className="font-semibold text-slate-200 block mt-0.5 truncate">{user.city || 'Kab. Tangerang'}</span>
-        </div>
-      </div>
-
-      {/* Footer Level & QR */}
-      <div className="flex items-center justify-between pt-3 border-t border-white/10 relative z-10">
-        <div className="flex items-center space-x-2">
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 text-slate-200 border border-white/10">
-            {donorLevel}
-          </span>
-        </div>
-        <div className="flex items-center space-x-1.5 text-slate-400 text-xs font-mono">
-          <QrCode className="w-5 h-5 text-white/80" />
-          <span className="text-[10px]">SCAN AT PMI</span>
+        <div className="flex items-center space-x-1.5 text-slate-400 font-mono">
+          <QrCode className="w-4 h-4 text-white/80" />
+          <span className="text-[11px] font-semibold tracking-wider text-slate-300">SCAN AT PMI</span>
         </div>
       </div>
     </div>

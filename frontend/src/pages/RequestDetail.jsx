@@ -28,7 +28,7 @@ import toast from 'react-hot-toast';
 export const RequestDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
 
   const [request, setRequest] = useState(null);
   const [matchingDonors, setMatchingDonors] = useState([]);
@@ -47,7 +47,7 @@ export const RequestDetail = () => {
 
   useEffect(() => {
     fetchDetail();
-  }, [id]);
+  }, [id, isAdmin]);
 
   const fetchDetail = async () => {
     try {
@@ -55,14 +55,20 @@ export const RequestDetail = () => {
       const res = await api.get(API_ENDPOINTS.BLOOD_REQUESTS.DETAIL(id));
       if (res.data?.success) {
         setRequest(res.data.data);
-        setMatchingDonors(res.data.data.matchingDonors || []);
         setResponses(res.data.data.responses || []);
       }
 
-      // Fetch broadcast text format
-      const bRes = await api.get(API_ENDPOINTS.BLOOD_REQUESTS.MATCHING_DONORS(id));
-      if (bRes.data?.success) {
-        setBroadcastText(bRes.data.broadcastText);
+      // Fetch broadcast text format & matching donors only if Admin (for donor privacy)
+      if (isAdmin) {
+        try {
+          const bRes = await api.get(API_ENDPOINTS.BLOOD_REQUESTS.MATCHING_DONORS(id));
+          if (bRes.data?.success) {
+            setBroadcastText(bRes.data.broadcastText);
+            setMatchingDonors(bRes.data.matchingDonors || []);
+          }
+        } catch (bErr) {
+          console.error('Error fetching matching donors:', bErr);
+        }
       }
     } catch (err) {
       console.error('Error fetching request detail:', err);
@@ -111,25 +117,27 @@ export const RequestDetail = () => {
         fetchDetail();
       }
     } catch (err) {
-      toast.error('Gagal memperbarui status permintaan.');
+      toast.error('Gagal menutup permintaan darah.');
     }
   };
 
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-64" />
+        <Skeleton className="h-64 rounded-3xl" />
+        <Skeleton className="h-48 rounded-3xl" />
       </div>
     );
   }
 
   if (!request) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <h3 className="text-lg font-bold text-slate-800">Permintaan tidak ditemukan</h3>
-        <Link to="/requests" className="text-blood-600 font-bold text-sm mt-2 inline-block">
-          Kembali ke daftar permintaan
+      <div className="max-w-md mx-auto px-4 py-16 text-center space-y-4">
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+        <h2 className="text-xl font-bold text-slate-800">Permintaan Tidak Ditemukan</h2>
+        <p className="text-xs text-slate-500">Data permintaan darah mungkin telah dihapus atau tidak tersedia.</p>
+        <Link to="/requests" className="inline-block py-2 px-4 bg-blood-600 text-white font-bold rounded-xl text-xs">
+          Kembali ke Daftar
         </Link>
       </div>
     );
@@ -139,7 +147,7 @@ export const RequestDetail = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Back button */}
+      {/* Back button & Admin Broadcast Action */}
       <div className="flex items-center justify-between">
         <Link
           to="/requests"
@@ -149,16 +157,19 @@ export const RequestDetail = () => {
           <span>Kembali ke Daftar</span>
         </Link>
 
-        <div className="flex items-center space-x-2">
-          <button
-            type="button"
-            onClick={() => setIsBroadcastOpen(true)}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
-          >
-            <Share2 className="w-4 h-4" />
-            <span>Format Broadcast WA</span>
-          </button>
-        </div>
+        {/* Format Broadcast WA (Hanya Ada di Dashboard / Tampilan Admin untuk Privasi Pendonor) */}
+        {isAdmin && (
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setIsBroadcastOpen(true)}
+              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Format Broadcast WA (Admin)</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Request Card */}

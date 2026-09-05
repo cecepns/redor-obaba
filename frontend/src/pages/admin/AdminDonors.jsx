@@ -28,6 +28,7 @@ export const AdminDonors = () => {
   const [editDonor, setEditDonor] = useState(null);
   const [editStatus, setEditStatus] = useState('siap');
   const [editVerified, setEditVerified] = useState(1);
+  const [editTotalDonations, setEditTotalDonations] = useState(0);
   const [savingStatus, setSavingStatus] = useState(false);
 
   // Delete dialog
@@ -64,6 +65,7 @@ export const AdminDonors = () => {
     setEditDonor(donor);
     setEditStatus(donor.status);
     setEditVerified(donor.is_verified ? 1 : 0);
+    setEditTotalDonations(donor.total_donations || 0);
   };
 
   const handleSaveStatus = async (e) => {
@@ -74,6 +76,7 @@ export const AdminDonors = () => {
       const res = await api.put(API_ENDPOINTS.DONORS.UPDATE_STATUS(editDonor.id), {
         status: editStatus,
         is_verified: editVerified,
+        total_donations: Number(editTotalDonations),
       });
       if (res.data?.success) {
         toast.success(res.data.message);
@@ -81,7 +84,7 @@ export const AdminDonors = () => {
         fetchDonors();
       }
     } catch (err) {
-      toast.error('Gagal memperbarui status donor.');
+      toast.error('Gagal memperbarui data donor.');
     } finally {
       setSavingStatus(false);
     }
@@ -295,6 +298,23 @@ export const AdminDonors = () => {
               <option value={1}>✅ Terverifikasi (Aktif)</option>
               <option value={0}>⏳ Menunggu Verifikasi</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase mb-1">
+              Total Riwayat Donasi (Kali)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={editTotalDonations}
+              onChange={(e) => setEditTotalDonations(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blood-500 focus:outline-none"
+              placeholder="0"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Jumlah total kantong/kali donor yang telah dilakukan oleh anggota ini.
+            </p>
           </div>
 
           <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">

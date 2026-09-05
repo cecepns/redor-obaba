@@ -551,15 +551,19 @@ app.get('/api/donors/:id', async (req, res) => {
   }
 });
 
-// PUT /api/donors/:id/status (Admin change status or verify)
+// PUT /api/donors/:id/status (Admin change status, verification, or total donations)
 app.put('/api/donors/:id/status', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { status, is_verified } = req.body;
+    const { status, is_verified, total_donations } = req.body;
     await pool.query(
-      'UPDATE users SET status = COALESCE(?, status), is_verified = COALESCE(?, is_verified) WHERE id = ?',
-      [status, is_verified, req.params.id]
+      `UPDATE users SET 
+        status = COALESCE(?, status), 
+        is_verified = COALESCE(?, is_verified),
+        total_donations = COALESCE(?, total_donations) 
+       WHERE id = ?`,
+      [status, is_verified, total_donations !== undefined ? total_donations : null, req.params.id]
     );
-    res.json({ success: true, message: 'Status donor berhasil diperbarui.' });
+    res.json({ success: true, message: 'Status dan data donor berhasil diperbarui.' });
   } catch (error) {
     console.error('Error update donor status:', error);
     res.status(500).json({ success: false, message: 'Gagal mengubah status donor.' });
@@ -949,8 +953,8 @@ app.post('/api/blood-requests/:id/respond', authenticateToken, async (req, res) 
   }
 });
 
-// GET /api/blood-requests/:id/matching-donors (Get WhatsApp Broadcast List)
-app.get('/api/blood-requests/:id/matching-donors', async (req, res) => {
+// GET /api/blood-requests/:id/matching-donors (Get WhatsApp Broadcast List - Admin Only for Donor Privacy)
+app.get('/api/blood-requests/:id/matching-donors', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const [requests] = await pool.query('SELECT * FROM blood_requests WHERE id = ?', [req.params.id]);
     if (requests.length === 0) {
