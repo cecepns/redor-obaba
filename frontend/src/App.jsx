@@ -33,6 +33,7 @@ import AdminActivities from './pages/admin/AdminActivities';
 import AdminSchedules from './pages/admin/AdminSchedules';
 import AdminHospitals from './pages/admin/AdminHospitals';
 import AdminFeedback from './pages/admin/AdminFeedback';
+import AdminWAGateway from './pages/admin/AdminWAGateway';
 
 // Protected Admin Route Helper
 const ProtectedAdminRoute = ({ children }) => {
@@ -125,6 +126,7 @@ export function App() {
             <Route path="schedules" element={<AdminSchedules />} />
             <Route path="hospitals" element={<AdminHospitals />} />
             <Route path="feedback" element={<AdminFeedback />} />
+            <Route path="wa-gateway" element={<AdminWAGateway />} />
           </Route>
 
           {/* Fallback */}

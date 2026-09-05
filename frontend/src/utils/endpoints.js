@@ -68,4 +68,12 @@ export const API_ENDPOINTS = {
   ANALYTICS: {
     DASHBOARD: '/analytics/dashboard',
   },
+
+  WA_GATEWAY: {
+    STATUS: '/wa-gateway/status',
+    CONNECT: '/wa-gateway/connect',
+    DISCONNECT: '/wa-gateway/disconnect',
+    TEST_SEND: '/wa-gateway/test-send',
+    BROADCAST_REQUEST: (id) => `/blood-requests/${id}/broadcast-wa`,
+  },
 };

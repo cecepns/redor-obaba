@@ -36,3 +36,6 @@ lerna-debug.log*
 # Uploads (preserve folder structure)
 backend/uploads-redor-obaba/*
 !backend/uploads-redor-obaba/.gitkeep
+
+# WhatsApp Gateway Auth Session
+backend/auth_baileys/

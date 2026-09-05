@@ -13,12 +13,148 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const QRCode = require('qrcode');
+const pino = require('pino');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'redor_obaba_secret_key_2026';
+
+// -------------------------------------------------------------
+// WhatsApp Gateway State & Service (Baileys Unofficial Multi-Device)
+// -------------------------------------------------------------
+const AUTH_DIR = path.join(__dirname, 'auth_baileys');
+if (!fs.existsSync(AUTH_DIR)) {
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+}
+
+let waSocket = null;
+let waStatus = 'disconnected'; // 'disconnected' | 'connecting' | 'qr_ready' | 'connected'
+let waQrCode = null; // data:image/png;base64,...
+let waConnectedPhone = null;
+let waReconnectTimer = null;
+
+async function initWhatsApp(force = false) {
+  try {
+    if (waSocket && !force && (waStatus === 'connected' || waStatus === 'connecting')) {
+      return;
+    }
+
+    if (waSocket) {
+      try {
+        waSocket.ev.removeAllListeners();
+        waSocket.end();
+      } catch (e) {}
+      waSocket = null;
+    }
+
+    waStatus = 'connecting';
+    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+
+    let version = [2, 3000, 1015901307];
+    try {
+      const v = await fetchLatestBaileysVersion();
+      if (v?.version) version = v.version;
+    } catch (e) {}
+
+    const logger = pino({ level: 'silent' });
+    const sock = makeWASocket({
+      version,
+      logger,
+      printQRInTerminal: false,
+      auth: state,
+      browser: ['Redor OBABA Gateway', 'Chrome', '1.0.0'],
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 10000,
+    });
+
+    waSocket = sock;
+
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+
+      if (qr) {
+        try {
+          waQrCode = await QRCode.toDataURL(qr, { margin: 2, scale: 6 });
+          waStatus = 'qr_ready';
+          console.log('[WA Gateway] New QR Code generated successfully.');
+        } catch (qrErr) {
+          console.error('[WA Gateway] QR conversion error:', qrErr);
+        }
+      }
+
+      if (connection === 'close') {
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        console.log(`[WA Gateway] Connection closed (code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
+
+        waStatus = 'disconnected';
+        waConnectedPhone = null;
+
+        if (statusCode === DisconnectReason.loggedOut) {
+          try {
+            fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+            fs.mkdirSync(AUTH_DIR, { recursive: true });
+          } catch (rmErr) {}
+          waQrCode = null;
+        } else if (shouldReconnect) {
+          clearTimeout(waReconnectTimer);
+          waReconnectTimer = setTimeout(() => {
+            initWhatsApp(true);
+          }, 8000);
+        }
+      } else if (connection === 'open') {
+        waStatus = 'connected';
+        waQrCode = null;
+        const phoneJid = sock.user?.id || '';
+        waConnectedPhone = phoneJid.split(':')[0] || phoneJid.split('@')[0];
+        console.log(`[WA Gateway] Connected successfully as ${waConnectedPhone}!`);
+      }
+    });
+
+  } catch (error) {
+    console.error('[WA Gateway] Initialization notice (non-fatal):', error.message);
+    waStatus = 'disconnected';
+  }
+}
+
+// Graceful notification send function (never throws or blocks caller)
+async function sendWhatsAppNotification(phoneNumber, messageText) {
+  try {
+    if (!waSocket || waStatus !== 'connected') {
+      return { success: false, reason: 'not_connected', message: 'WhatsApp Gateway belum terhubung.' };
+    }
+
+    if (!phoneNumber || !messageText) {
+      return { success: false, reason: 'invalid_params', message: 'Nomor HP atau pesan kosong.' };
+    }
+
+    let cleanPhone = phoneNumber.toString().replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62' + cleanPhone.slice(1);
+    }
+    if (!cleanPhone.endsWith('@s.whatsapp.net')) {
+      cleanPhone = `${cleanPhone}@s.whatsapp.net`;
+    }
+
+    await waSocket.sendMessage(cleanPhone, { text: messageText });
+    return { success: true, jid: cleanPhone };
+  } catch (err) {
+    console.error(`[WA Gateway] Error sending to ${phoneNumber}:`, err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+// Initialize WA on startup in background (non-blocking)
+setTimeout(() => {
+  initWhatsApp(false);
+}, 2000);
 
 // Middleware
 app.use(cors());
@@ -1637,6 +1773,189 @@ app.get('/api/analytics/dashboard', async (req, res) => {
   } catch (error) {
     console.error('Error get analytics:', error);
     res.status(500).json({ success: false, message: 'Gagal memuat data statistik.' });
+  }
+});
+
+// =============================================================
+// WhatsApp Gateway Admin Routes (Baileys Multi-Device)
+// =============================================================
+
+// GET /api/wa-gateway/status
+app.get('/api/wa-gateway/status', authenticateToken, requireAdmin, async (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      status: waStatus,
+      qr: waQrCode,
+      phone: waConnectedPhone,
+      connected: waStatus === 'connected',
+    },
+  });
+});
+
+// POST /api/wa-gateway/connect (Trigger fresh QR / reconnect)
+app.post('/api/wa-gateway/connect', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    initWhatsApp(true);
+    res.json({
+      success: true,
+      message: 'Inisialisasi koneksi WhatsApp dimulai. Silakan tunggu QR Code muncul.',
+      data: { status: 'connecting' },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal menghubungkan WhatsApp: ' + err.message });
+  }
+});
+
+// POST /api/wa-gateway/disconnect
+app.post('/api/wa-gateway/disconnect', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    if (waSocket) {
+      try {
+        await waSocket.logout();
+      } catch (e) {}
+      try {
+        waSocket.ev.removeAllListeners();
+        waSocket.end();
+      } catch (e) {}
+      waSocket = null;
+    }
+    waStatus = 'disconnected';
+    waConnectedPhone = null;
+    waQrCode = null;
+
+    try {
+      fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+      fs.mkdirSync(AUTH_DIR, { recursive: true });
+    } catch (e) {}
+
+    res.json({ success: true, message: 'WhatsApp Gateway berhasil diputuskan dan sesi dihapus.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal memutuskan sesi: ' + err.message });
+  }
+});
+
+// POST /api/wa-gateway/test-send
+app.post('/api/wa-gateway/test-send', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+    if (!phone || !message) {
+      return res.status(400).json({ success: false, message: 'Nomor telepon dan pesan wajib diisi.' });
+    }
+
+    if (waStatus !== 'connected') {
+      return res.status(400).json({
+        success: false,
+        message: 'WhatsApp Gateway belum terhubung. Silakan scan QR Code terlebih dahulu.',
+      });
+    }
+
+    const result = await sendWhatsAppNotification(phone, message);
+    if (result.success) {
+      res.json({ success: true, message: 'Pesan tes WhatsApp berhasil terkirim!' });
+    } else {
+      res.status(500).json({ success: false, message: 'Gagal mengirim pesan: ' + (result.error || result.message) });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Kesalahan pengiriman: ' + err.message });
+  }
+});
+
+// POST /api/blood-requests/:id/broadcast-wa (Auto broadcast to compatible ready donors)
+app.post('/api/blood-requests/:id/broadcast-wa', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [requests] = await pool.query('SELECT * FROM blood_requests WHERE id = ?', [req.params.id]);
+    if (requests.length === 0) {
+      return res.status(404).json({ success: false, message: 'Permintaan darah tidak ditemukan.' });
+    }
+    const request = requests[0];
+
+    const compatibleTypes = getCompatibleBloodTypes(request.blood_type, request.rhesus);
+    let typeConditions = compatibleTypes.map(() => '(blood_type = ? AND rhesus = ?)').join(' OR ');
+    let typeParams = [];
+    compatibleTypes.forEach((t) => typeParams.push(t.type, t.rhesus));
+
+    const [matchingDonors] = await pool.query(
+      `SELECT id, name, phone, blood_type, rhesus, city
+       FROM users
+       WHERE role = 'member' AND status = 'siap' AND (${typeConditions})
+       ORDER BY (blood_type = '${request.blood_type}' AND rhesus = '${request.rhesus}') DESC`,
+      typeParams
+    );
+
+    if (matchingDonors.length === 0) {
+      return res.json({
+        success: true,
+        sentCount: 0,
+        message: 'Tidak ada pendonor berstatus siap yang cocok untuk golongan darah ini saat ini.',
+      });
+    }
+
+    if (waStatus !== 'connected') {
+      return res.json({
+        success: false,
+        isWaOffline: true,
+        matchingCount: matchingDonors.length,
+        message: 'WhatsApp Gateway belum terhubung di server. Silakan hubungkan WhatsApp di menu Admin WA Gateway untuk mengirim notifikasi otomatis.',
+      });
+    }
+
+    // Format broadcast text with custom message if provided
+    const { customMessage } = req.body;
+    const updateDate = new Date(request.created_at).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    // Run async loop in background with 2.5s safe delay
+    let sentCount = 0;
+    (async () => {
+      for (const donor of matchingDonors) {
+        if (!donor.phone) continue;
+        const personalizedMsg = customMessage
+          ? `Halo Kak ${donor.name},\n${customMessage}`
+          : `[PANGGILAN DARURAT DONOR DARAH]
+Komunitas Redor OBABA
+
+Halo Kak *${donor.name}*, salam kemanusiaan.
+Saat ini ada pasien yang sangat membutuhkan bantuan donor darah sukarela:
+
+👤 *Pasien:* ${request.patient_name} (${request.patient_age} Th)
+🩸 *Golongan Darah:* ${request.blood_type} (${request.rhesus === '-' ? 'Rh-' : 'Rh+'})
+💉 *Komponen:* ${request.blood_component}
+📦 *Kebutuhan:* ${request.bags_needed - (request.bags_fulfilled || 0)} Kantong lagi
+🏥 *Lokasi RS:* ${request.hospital_name} ${request.hospital_room ? `(${request.hospital_room})` : ''}
+⚠️ *Diagnosis:* ${request.diagnosis}
+
+Apakah Kakak bersedia membantu pasien hari ini?
+Konfirmasi respon kesediaan Anda langsung melalui tautan berikut:
+https://dor-obaba.vercel.app/confirm-request/${request.id}
+
+Atau hubungi Penanggung Jawab (${request.cp_name}): wa.me/${request.cp_phone.replace(/\D/g, '').startsWith('0') ? '62' + request.cp_phone.replace(/\D/g, '').slice(1) : request.cp_phone.replace(/\D/g, '')}
+
+_Pesan otomatis resmi dari Sistem Komunitas Redor OBABA. 100% Gratis & Bebas Biaya._`;
+
+        try {
+          await sendWhatsAppNotification(donor.phone, personalizedMsg);
+          sentCount++;
+          // Safe delay between messages
+          await new Promise((r) => setTimeout(r, 2500));
+        } catch (e) {
+          console.error(`[WA Gateway Broadcast] Failed for ${donor.name}:`, e.message);
+        }
+      }
+      console.log(`[WA Gateway Broadcast] Finished sending to ${sentCount}/${matchingDonors.length} donors for Request #${request.id}`);
+    })();
+
+    res.json({
+      success: true,
+      matchingCount: matchingDonors.length,
+      message: `Proses pengiriman notifikasi WhatsApp ke ${matchingDonors.length} relawan donor yang cocok sedang berjalan di latar belakang.`,
+    });
+  } catch (err) {
+    console.error('Error in WA broadcast:', err);
+    res.status(500).json({ success: false, message: 'Gagal memproses broadcast: ' + err.message });
   }
 });
 

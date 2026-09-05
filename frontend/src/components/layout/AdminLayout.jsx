@@ -31,6 +31,7 @@ export const AdminLayout = () => {
     { name: 'Jadwal Aksi Donor', path: '/admin/schedules', icon: Calendar },
     { name: 'Faskes & Ambulans', path: '/admin/hospitals', icon: Building2 },
     { name: 'Kritik & Saran', path: '/admin/feedback', icon: MessageSquare },
+    { name: 'WhatsApp Gateway', path: '/admin/wa-gateway', icon: MessageSquare },
   ];
 
   const handleLogout = () => {
