@@ -11,7 +11,6 @@ import {
   Droplets,
   ChevronRight,
   ChevronLeft,
-  ShieldCheck,
   Award,
   Sparkles,
   MapPin,
@@ -20,7 +19,10 @@ import {
   Heart,
   PlusCircle,
   Newspaper,
-  ImageOff,
+  LogIn,
+  CheckCircle2,
+  PhoneCall,
+  Activity as ActivityIcon,
 } from 'lucide-react';
 import DonorEligibilityBadge from '../components/donor/DonorEligibilityBadge';
 import Skeleton from '../components/common/Skeleton';
@@ -58,7 +60,7 @@ export const Home = () => {
       subtitle: 'Indonesia Berdaulat, Adil dan Makmur Bersama Aksi Donor Darah Relawan Redor OBABA',
       location: 'Kabupaten Tangerang & Sekitarnya',
       image: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80',
-      gradient: 'from-blood-900/90 via-blood-800/70 to-slate-900/80',
+      gradient: 'from-blood-950/95 via-blood-900/80 to-slate-950/85',
       linkText: 'Lihat Jadwal Donor',
       linkUrl: '/schedules',
       isInternal: true,
@@ -70,7 +72,7 @@ export const Home = () => {
       subtitle: 'Jejaring respon cepat butuh darah darurat berbasis komunitas siaga 24 jam gratis.',
       location: 'Unit Reaksi Cepat OBABA',
       image: 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=1200&q=80',
-      gradient: 'from-slate-900/90 via-blood-900/60 to-slate-950/80',
+      gradient: 'from-slate-950/95 via-blood-950/80 to-slate-900/85',
       linkText: 'Ajukan Butuh Darah',
       action: 'request',
     },
@@ -81,7 +83,7 @@ export const Home = () => {
       subtitle: 'Terima kasih atas ketulusan hati para pendonor sukarela yang telah menyelamatkan ribuan pasien.',
       location: 'Unit Donor Darah PMI',
       image: 'https://images.unsplash.com/photo-1579152276508-410a56249be5?auto=format&fit=crop&w=1200&q=80',
-      gradient: 'from-amber-950/90 via-slate-900/70 to-blood-950/80',
+      gradient: 'from-amber-950/95 via-slate-950/80 to-blood-950/85',
       linkText: 'Lihat Galeri Foto',
       linkUrl: '/gallery',
       isInternal: true,
@@ -93,7 +95,7 @@ export const Home = () => {
       subtitle: 'Tubuh lebih sehat, regenerasi sel darah baru, dan pahala kebaikan yang terus mengalir.',
       location: 'Sentra Donor Darah Tangerang',
       image: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1200&q=80',
-      gradient: 'from-sky-950/90 via-slate-900/70 to-slate-950/80',
+      gradient: 'from-sky-950/95 via-slate-950/80 to-slate-900/85',
       linkText: 'Baca Berita & Edukasi',
       linkUrl: '/activities',
       isInternal: true,
@@ -109,7 +111,7 @@ export const Home = () => {
     if (isPaused) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 4500);
+    }, 5000);
     return () => clearInterval(interval);
   }, [isPaused, banners.length]);
 
@@ -184,79 +186,144 @@ export const Home = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
-      {/* 1. Logged In User Status Header (Clean & Minimalist) */}
-      {isAuthenticated && user && (
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blood-600 to-blood-700 text-white flex items-center justify-center font-black text-lg shadow-sm flex-shrink-0">
+    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-14">
+      {/* 1. STATE SEBELUM LOGIN VS SESUDAH LOGIN */}
+      {isAuthenticated && user ? (
+        /* --- SESUDAH LOGIN: USER MEMBER IDENTITY CARD --- */
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-3.5">
+          {/* Top Row: Avatar & Profile Info + Action */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center space-x-3 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blood-600 to-blood-700 text-white flex items-center justify-center font-black text-lg shadow-sm flex-shrink-0 tracking-tight">
                 {user.blood_type || '-'}{user.rhesus || '+'}
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-bold text-sm sm:text-base text-slate-900">{user.name}</h3>
-                  <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 truncate">
+                    {user.name}
+                  </h3>
+                  <span className="bg-slate-100 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex-shrink-0">
                     {user.role === 'admin' ? 'Admin' : 'Anggota'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  ID: {user.donor_card_no || 'OBABA-DNR-001'} • {user.total_donations || 0}x Donor
+                <p className="text-xs text-slate-500 mt-0.5 truncate">
+                  ID: <span className="font-semibold text-slate-700">{user.donor_card_no || 'OBABA-DNR-001'}</span> • <span className="font-semibold text-blood-600">{user.total_donations || 0}x</span> Donor
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2.5 self-start sm:self-auto">
-              <DonorEligibilityBadge eligibility={user.eligibility} status={user.status} />
-              <Link
-                to="/donor-card"
-                className="inline-flex items-center space-x-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
-              >
-                <Award className="w-3.5 h-3.5 text-amber-500" />
-                <span className="hidden sm:inline">Kartu Donor</span>
-              </Link>
+            <Link
+              to="/donor-card"
+              className="inline-flex items-center space-x-1.5 py-2 px-3 sm:px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors flex-shrink-0 shadow-xs"
+            >
+              <Award className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span className="hidden sm:inline">Kartu Donor</span>
+              <span className="sm:hidden text-[11px]">Kartu</span>
+            </Link>
+          </div>
+
+          {/* Integrated Full-Width Eligibility Status */}
+          <DonorEligibilityBadge eligibility={user.eligibility} status={user.status} />
+        </div>
+      ) : (
+        /* --- SEBELUM LOGIN: WELCOMING GUEST HERO BANNER --- */
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-850 to-blood-950 text-white rounded-3xl p-5 sm:p-7 shadow-xs border border-slate-800/80">
+          <div className="absolute -top-16 -right-16 w-56 h-56 bg-blood-600/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-sky-600/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center space-x-1.5 bg-white/10 backdrop-blur-md text-amber-300 text-[11px] font-extrabold uppercase px-3 py-1 rounded-full border border-white/10">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Aksi Kemanusiaan Relawan Donor Darah</span>
+              </div>
+
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black leading-tight tracking-tight text-white">
+                Setetes Darah Kita, <br className="hidden sm:inline" />
+                <span className="text-blood-400">Sejuta Harapan</span> Bagi Sesama
+              </h1>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Bergabunglah bersama komunitas relawan Redor OBABA. Pantau ketersediaan stok darah secara berkala, dapatkan jadwal donor keliling, dan bantu sesama yang membutuhkan darah darurat.
+              </p>
+
+              {/* Action Buttons for Guest */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-1.5">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center space-x-2 py-2.5 px-4 sm:px-5 bg-blood-600 hover:bg-blood-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blood-600/30 transition-all"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Daftar / Masuk Pendonor</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setIsRequestModalOpen(true)}
+                  className="inline-flex items-center space-x-2 py-2.5 px-4 sm:px-5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs sm:text-sm font-bold border border-white/20 backdrop-blur-sm transition-all"
+                >
+                  <HeartHandshake className="w-4 h-4 text-rose-300" />
+                  <span>Ajukan Butuh Darah</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Stats Highlights */}
+            <div className="grid grid-cols-3 lg:grid-cols-1 gap-2 sm:gap-3 flex-shrink-0 lg:w-56">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center lg:text-left">
+                <p className="text-base sm:text-lg font-black text-amber-400 leading-none">24 Jam</p>
+                <p className="text-[10px] sm:text-xs text-slate-300 font-medium mt-1">Respon Cepat Siaga</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center lg:text-left">
+                <p className="text-base sm:text-lg font-black text-emerald-400 leading-none">100%</p>
+                <p className="text-[10px] sm:text-xs text-slate-300 font-medium mt-1">Sukarela & Gratis</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center lg:text-left">
+                <p className="text-base sm:text-lg font-black text-sky-400 leading-none">JEKDON</p>
+                <p className="text-[10px] sm:text-xs text-slate-300 font-medium mt-1">Pengantaran Darah</p>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 2. Top 4 Quick Action Menu (Sesuai Referensi Gambar: Jadwal Donor, Donasi, Galeri Donor, Komunitas) */}
+      {/* 2. Top 4 Quick Action Menu (Jadwal Donor, Donasi, Galeri Donor, Komunitas) */}
       <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
         {/* Menu 1: Jadwal Donor */}
         <Link
           to="/schedules"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all text-center"
+          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blood-50 border border-blood-100/80 text-blood-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <Droplets className="w-6 h-6 fill-blood-600 text-blood-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 line-clamp-1">
+          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
             Jadwal Donor
           </span>
         </Link>
 
-        {/* Menu 2: Donasi (Ganti Rumah Sakit - Sementara Kosong) */}
+        {/* Menu 2: Donasi */}
         <Link
           to="/donations"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all text-center"
+          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 border border-sky-100/80 text-sky-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <HeartHandshake className="w-6 h-6 text-sky-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 line-clamp-1">
+          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
             Donasi
           </span>
         </Link>
 
-        {/* Menu 3: Galeri Donor (Ganti Ambulance - Isinya Foto Orang yg Donor) */}
+        {/* Menu 3: Galeri Donor */}
         <Link
           to="/gallery"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all text-center"
+          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-50 border border-amber-100/80 text-amber-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <Camera className="w-6 h-6 text-amber-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 line-clamp-1">
+          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
             Galeri Donor
           </span>
         </Link>
@@ -264,26 +331,26 @@ export const Home = () => {
         {/* Menu 4: Komunitas */}
         <Link
           to="/help"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all text-center"
+          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-50 border border-purple-100/80 text-purple-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <Users className="w-6 h-6 text-purple-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 line-clamp-1">
+          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
             Komunitas
           </span>
         </Link>
       </div>
 
-      {/* 3. Section Promo (Lokasi Banner Carousel dengan Indikator Dots Sesuai Gambar Referensi) */}
+      {/* 3. Section Promo & Informasi Carousel */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight min-w-0 truncate">
             Promo & Informasi
           </h2>
           <Link
             to="/schedules"
-            className="text-xs font-bold text-slate-500 hover:text-blood-600 transition-colors flex items-center gap-0.5"
+            className="text-xs font-bold text-slate-500 hover:text-blood-600 transition-colors flex items-center gap-0.5 flex-shrink-0 whitespace-nowrap"
           >
             <span>Lihat Semua</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -318,14 +385,14 @@ export const Home = () => {
                 <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
 
                 {/* Banner Content */}
-                <div className="absolute inset-0 p-5 sm:p-8 flex flex-col justify-between text-white z-20">
+                <div className="absolute inset-0 p-4 sm:p-7 flex flex-col justify-between text-white z-20">
                   <div className="space-y-1.5 sm:space-y-2 max-w-xl">
                     <div className="inline-flex items-center space-x-1.5 bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-xs font-black uppercase px-2.5 py-0.5 rounded-full border border-white/20">
                       <Sparkles className="w-3 h-3 text-amber-300" />
                       <span>{banner.tag}</span>
                     </div>
 
-                    <h3 className="text-lg sm:text-2xl md:text-3xl font-black leading-tight tracking-tight text-white drop-shadow-sm line-clamp-2">
+                    <h3 className="text-base sm:text-xl md:text-2xl font-black leading-tight tracking-tight text-white drop-shadow-sm line-clamp-2">
                       {banner.title}
                     </h3>
 
@@ -336,14 +403,14 @@ export const Home = () => {
 
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center space-x-1.5 text-[11px] sm:text-xs text-slate-300 font-medium">
-                      <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                      <span>{banner.location}</span>
+                      <MapPin className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+                      <span className="truncate max-w-[180px] sm:max-w-none">{banner.location}</span>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => handleBannerAction(banner)}
-                      className="py-1.5 px-4 sm:py-2 sm:px-5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all flex items-center space-x-1.5"
+                      className="py-1.5 px-3.5 sm:py-2 sm:px-5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all flex items-center space-x-1 flex-shrink-0"
                     >
                       <span>{banner.linkText}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -373,7 +440,7 @@ export const Home = () => {
           </button>
         </div>
 
-        {/* Carousel Pagination Dots (Sesuai Referensi Gambar) */}
+        {/* Carousel Pagination Dots */}
         <div className="flex items-center justify-center space-x-1.5 pt-1">
           {banners.map((_, idx) => (
             <button
@@ -391,20 +458,20 @@ export const Home = () => {
         </div>
       </div>
 
-      {/* 4. Section Berita dan Edukasi (List Kegiatan Komunitas - Sesuai Gambar Referensi SIDONI) */}
+      {/* 4. Section Berita dan Edukasi */}
       <div className="space-y-3 pt-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">
               Berita dan Edukasi
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 truncate">
               Dokumentasi aksi kemanusiaan & kegiatan relawan donor darah
             </p>
           </div>
           <Link
             to="/activities"
-            className="text-xs font-bold text-blood-600 hover:text-blood-700 transition-colors flex items-center gap-0.5"
+            className="text-xs font-bold text-blood-600 hover:text-blood-700 transition-colors flex items-center gap-0.5 flex-shrink-0 whitespace-nowrap"
           >
             <span>Lihat Semua</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -412,8 +479,8 @@ export const Home = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <Skeleton className="h-56" count={4} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Skeleton className="h-56 rounded-2xl" count={4} />
           </div>
         ) : activities.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -432,11 +499,11 @@ export const Home = () => {
                 <Link
                   key={act.id}
                   to={`/activities/${act.slug || act.id}`}
-                  className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between"
                 >
                   <div>
-                    {/* Thumbnail Image */}
-                    <div className="relative aspect-[16/10] w-full bg-slate-100 overflow-hidden">
+                    {/* Thumbnail Image with Rich Gradient Fallback */}
+                    <div className="relative aspect-[16/10] w-full bg-slate-900 overflow-hidden flex items-center justify-center">
                       {imageUrl ? (
                         <img
                           src={imageUrl}
@@ -448,17 +515,24 @@ export const Home = () => {
                           }}
                         />
                       ) : null}
+
+                      {/* Fallback branded banner when no image */}
                       <div
-                        className={`w-full h-full bg-slate-50 flex flex-col items-center justify-center text-slate-300 ${
-                          act.image ? 'hidden' : 'flex'
+                        className={`w-full h-full bg-gradient-to-br from-slate-850 via-blood-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center ${
+                          imageUrl ? 'hidden' : 'flex'
                         }`}
                       >
-                        <ImageOff className="w-6 h-6 text-slate-400" />
+                        <div className="w-10 h-10 rounded-xl bg-blood-600/30 border border-blood-500/30 flex items-center justify-center text-blood-400 mb-1.5">
+                          <Newspaper className="w-5 h-5" />
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                          Redor OBABA
+                        </span>
                       </div>
 
                       {/* Category Tag */}
-                      <div className="absolute top-2.5 left-2.5">
-                        <span className="bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
+                      <div className="absolute top-2.5 left-2.5 z-10">
+                        <span className="bg-slate-950/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
                           {act.category || 'Berita'}
                         </span>
                       </div>
@@ -472,7 +546,7 @@ export const Home = () => {
                           {formattedDate}
                         </span>
                         {act.location && (
-                          <span className="truncate max-w-[100px]">
+                          <span className="truncate max-w-[110px]">
                             • {act.location}
                           </span>
                         )}
@@ -483,7 +557,7 @@ export const Home = () => {
                       </h3>
 
                       <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                        {act.summary}
+                        {act.summary || 'Dokumentasi kegiatan dan informasi aksi relawan donor darah.'}
                       </p>
                     </div>
                   </div>
@@ -497,8 +571,8 @@ export const Home = () => {
             })}
           </div>
         ) : (
-          /* Fallback Sample Activities matching reference if DB is empty */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          /* Fallback Sample Activities matching community activities */
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
               to="/activities"
               className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
@@ -509,13 +583,18 @@ export const Home = () => {
                   alt="Layanan Pengantaran Darah"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute top-2.5 left-2.5">
+                  <span className="bg-slate-950/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
+                    Layanan Relawan
+                  </span>
+                </div>
               </div>
               <div className="p-4 space-y-1">
                 <h3 className="font-black text-slate-900 text-xs sm:text-sm group-hover:text-blood-600 transition-colors leading-snug uppercase">
                   LAYANAN PENGANTARAN DARAH BERBASIS APLIKASI JEKDON
                 </h3>
                 <p className="text-xs text-slate-500 line-clamp-2">
-                  Komunitas Redor OBABA memperkuat jejaring antar faskes dan respons cepat butuh darah.
+                  Komunitas Redor OBABA memperkuat jejaring antar faskes dan respons cepat butuh darah darurat.
                 </p>
               </div>
             </Link>
@@ -530,6 +609,11 @@ export const Home = () => {
                   alt="PMI Banten Perkuat Jejaring"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute top-2.5 left-2.5">
+                  <span className="bg-slate-950/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
+                    Aksi Kemanusiaan
+                  </span>
+                </div>
               </div>
               <div className="p-4 space-y-1">
                 <h3 className="font-black text-slate-900 text-xs sm:text-sm group-hover:text-blood-600 transition-colors leading-snug uppercase">
