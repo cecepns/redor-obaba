@@ -36,16 +36,16 @@ export const AdminWAGateway = () => {
   const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => {
-    fetchStatus();
-    // Auto poll status every 4 seconds when waiting for QR scan or connecting
+    fetchStatus(true);
+    // Auto poll status every 2.5 seconds when waiting for QR scan or connecting
     const interval = setInterval(() => {
       fetchStatus(false);
-    }, 4000);
+    }, 2500);
 
     return () => clearInterval(interval);
   }, []);
 
-  const fetchStatus = async (showLoading = true) => {
+  const fetchStatus = async (showLoading = false) => {
     try {
       if (showLoading) setLoading(true);
       const res = await api.get(API_ENDPOINTS.WA_GATEWAY.STATUS);
@@ -61,11 +61,15 @@ export const AdminWAGateway = () => {
 
   const handleConnect = async () => {
     setConnecting(true);
+    setStatusData((prev) => ({ ...prev, status: 'connecting', qr: null }));
     try {
       const res = await api.post(API_ENDPOINTS.WA_GATEWAY.CONNECT);
       if (res.data?.success) {
         toast.success(res.data.message);
-        fetchStatus(true);
+        // Quick burst poll to get QR as soon as generated
+        setTimeout(() => fetchStatus(false), 1500);
+        setTimeout(() => fetchStatus(false), 3000);
+        setTimeout(() => fetchStatus(false), 5000);
       }
     } catch (err) {
       toast.error('Gagal memulai koneksi WhatsApp.');
@@ -139,6 +143,8 @@ export const AdminWAGateway = () => {
                   ? 'bg-emerald-500 text-white'
                   : statusData.status === 'qr_ready'
                   ? 'bg-amber-500 text-white'
+                  : statusData.status === 'connecting'
+                  ? 'bg-blue-500 text-white'
                   : 'bg-slate-200 text-slate-600'
               }`}
             >
@@ -155,7 +161,12 @@ export const AdminWAGateway = () => {
                 ) : statusData.status === 'qr_ready' ? (
                   <span className="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    Menunggu Scan QR
+                    Scan QR Code
+                  </span>
+                ) : statusData.status === 'connecting' ? (
+                  <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-spin" />
+                    Menyiapkan QR...
                   </span>
                 ) : (
                   <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full">
@@ -168,7 +179,9 @@ export const AdminWAGateway = () => {
                   ? `Nomor Terhubung: +${statusData.phone}`
                   : statusData.status === 'qr_ready'
                   ? 'Scan QR Code di bawah menggunakan aplikasi WhatsApp Anda.'
-                  : 'Server siap. Klik tombol hubungkan untuk membuat QR Code login.'}
+                  : statusData.status === 'connecting'
+                  ? 'Sedang membuat sesi baru dan menyiapkan QR Code...'
+                  : 'Server siap. Klik tombol di kanan untuk menghubungkan WhatsApp.'}
               </p>
             </div>
           </div>
@@ -197,24 +210,35 @@ export const AdminWAGateway = () => {
               <button
                 type="button"
                 onClick={handleConnect}
-                disabled={connecting}
-                className="inline-flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
+                disabled={connecting || statusData.status === 'connecting'}
+                className="inline-flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50"
               >
                 <Zap className="w-4 h-4" />
-                <span>{connecting ? 'Menyiapkan...' : 'Hubungkan / Scan QR'}</span>
+                <span>{connecting || statusData.status === 'connecting' ? 'Membuat QR Code...' : 'Hubungkan / Scan QR'}</span>
               </button>
             )}
           </div>
         </div>
 
+        {/* Loading State during Connecting */}
+        {statusData.status === 'connecting' && (
+          <div className="p-8 bg-slate-50 rounded-3xl border border-slate-200/90 flex flex-col items-center text-center space-y-3 max-w-md mx-auto animate-pulse">
+            <div className="w-12 h-12 rounded-full border-3 border-blood-600 border-t-transparent animate-spin flex items-center justify-center" />
+            <h4 className="font-bold text-sm text-slate-800">Sedang Membuat QR Code WhatsApp</h4>
+            <p className="text-xs text-slate-500 max-w-xs">
+              Sistem sedang menginisialisasi sesi Baileys multi-device. QR Code akan muncul dalam beberapa detik...
+            </p>
+          </div>
+        )}
+
         {/* QR Code Display Area */}
         {statusData.status === 'qr_ready' && statusData.qr && (
           <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/90 flex flex-col items-center text-center space-y-4 max-w-md mx-auto animate-in fade-in zoom-in-95">
-            <div className="bg-white p-3 rounded-2xl shadow-md border border-slate-200">
-              <img src={statusData.qr} alt="Scan WhatsApp QR" className="w-56 h-56 object-contain" />
+            <div className="bg-white p-3.5 rounded-2xl shadow-md border border-slate-200">
+              <img src={statusData.qr} alt="Scan WhatsApp QR" className="w-60 h-60 object-contain" />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 w-full">
               <h4 className="font-black text-sm text-slate-900">Cara Menghubungkan:</h4>
               <ol className="text-xs text-slate-600 text-left space-y-1 list-decimal list-inside bg-white p-3.5 rounded-xl border border-slate-200/80">
                 <li>Buka aplikasi <strong>WhatsApp</strong> di HP Anda.</li>

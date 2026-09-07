@@ -15,7 +15,7 @@ const path = require('path');
 const fs = require('fs');
 const QRCode = require('qrcode');
 const pino = require('pino');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 
 dotenv.config();
 
@@ -51,12 +51,34 @@ async function initWhatsApp(force = false) {
       waSocket = null;
     }
 
+    if (force) {
+      waQrCode = null;
+      waConnectedPhone = null;
+    }
+
     waStatus = 'connecting';
+    console.log('[WA Gateway] Initializing WhatsApp multi-device socket...');
+
+    // If forcing a new connection and not already linked, clean stale auth files
+    if (force) {
+      try {
+        const files = fs.readdirSync(AUTH_DIR);
+        for (const file of files) {
+          try {
+            fs.unlinkSync(path.join(AUTH_DIR, file));
+          } catch (err) {}
+        }
+      } catch (e) {}
+    }
+
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
 
-    let version = [2, 3000, 1015901307];
+    // Fast version fetch with fallback
+    let version = [2, 3000, 1017531287];
     try {
-      const v = await fetchLatestBaileysVersion();
+      const vPromise = fetchLatestBaileysVersion();
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+      const v = await Promise.race([vPromise, timeoutPromise]);
       if (v?.version) version = v.version;
     } catch (e) {}
 
@@ -66,10 +88,12 @@ async function initWhatsApp(force = false) {
       logger,
       printQRInTerminal: false,
       auth: state,
-      browser: ['Redor OBABA Gateway', 'Chrome', '1.0.0'],
+      browser: Browsers ? Browsers.ubuntu('Chrome') : ['Ubuntu', 'Chrome', '22.04.4'],
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 10000,
+      keepAliveIntervalMs: 15000,
+      syncFullHistory: false,
+      generateHighQualityLinkPreview: false,
     });
 
     waSocket = sock;
@@ -83,7 +107,7 @@ async function initWhatsApp(force = false) {
         try {
           waQrCode = await QRCode.toDataURL(qr, { margin: 2, scale: 6 });
           waStatus = 'qr_ready';
-          console.log('[WA Gateway] New QR Code generated successfully.');
+          console.log('[WA Gateway] ✅ New QR Code generated successfully.');
         } catch (qrErr) {
           console.error('[WA Gateway] QR conversion error:', qrErr);
         }
@@ -106,7 +130,7 @@ async function initWhatsApp(force = false) {
         } else if (shouldReconnect) {
           clearTimeout(waReconnectTimer);
           waReconnectTimer = setTimeout(() => {
-            initWhatsApp(true);
+            initWhatsApp(false);
           }, 8000);
         }
       } else if (connection === 'open') {
@@ -114,12 +138,12 @@ async function initWhatsApp(force = false) {
         waQrCode = null;
         const phoneJid = sock.user?.id || '';
         waConnectedPhone = phoneJid.split(':')[0] || phoneJid.split('@')[0];
-        console.log(`[WA Gateway] Connected successfully as ${waConnectedPhone}!`);
+        console.log(`[WA Gateway] ✅ Connected successfully as ${waConnectedPhone}!`);
       }
     });
 
   } catch (error) {
-    console.error('[WA Gateway] Initialization notice (non-fatal):', error.message);
+    console.error('[WA Gateway] Initialization error details:', error.stack || error);
     waStatus = 'disconnected';
   }
 }
