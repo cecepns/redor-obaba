@@ -100,28 +100,6 @@ export const Login = () => {
           </button>
         </form>
 
-        {/* Demo Credentials Info & Quick Fill */}
-        <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] text-slate-600 space-y-2">
-          <p className="font-bold text-slate-800">Akun Contoh Pengujian (Demo):</p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setFormData({ identifier: '081234567890', password: 'password123' })}
-              className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-blood-500 hover:text-blood-600 font-semibold transition-all shadow-sm flex items-center space-x-1"
-            >
-              <span>👑 Isi Admin (081234567890)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ identifier: '081298765432', password: 'password123' })}
-              className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-blood-500 hover:text-blood-600 font-semibold transition-all shadow-sm flex items-center space-x-1"
-            >
-              <span>🩸 Isi Member (081298765432)</span>
-            </button>
-          </div>
-          <p className="text-[10px] text-slate-400">Kata sandi default: <code className="text-slate-600 font-mono">password123</code></p>
-        </div>
-
         <div className="pt-2 text-center text-xs text-slate-500">
           Belum terdaftar sebagai anggota?{' '}
           <Link to="/register" className="font-bold text-blood-600 hover:underline">
