@@ -21,8 +21,7 @@ import {
   Newspaper,
   LogIn,
   CheckCircle2,
-  PhoneCall,
-  Activity as ActivityIcon,
+  ImageOff,
 } from 'lucide-react';
 import DonorEligibilityBadge from '../components/donor/DonorEligibilityBadge';
 import Skeleton from '../components/common/Skeleton';
@@ -58,10 +57,10 @@ export const Home = () => {
       tag: 'HUT & Semangat Kemanusiaan',
       title: 'Dirgahayu Republik Indonesia Ke-81',
       subtitle: 'Indonesia Berdaulat, Adil dan Makmur Bersama Aksi Donor Darah Relawan Redor OBABA',
-      location: 'Kabupaten Tangerang & Sekitarnya',
+      location: 'Kab. Tangerang',
       image: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-blood-950/95 via-blood-900/80 to-slate-950/85',
-      linkText: 'Lihat Jadwal Donor',
+      linkText: 'Jadwal Donor',
       linkUrl: '/schedules',
       isInternal: true,
     },
@@ -70,10 +69,10 @@ export const Home = () => {
       tag: 'Layanan Cepat Relawan',
       title: 'Layanan Pengantaran & Respons Darah JEKDON',
       subtitle: 'Jejaring respon cepat butuh darah darurat berbasis komunitas siaga 24 jam gratis.',
-      location: 'Unit Reaksi Cepat OBABA',
+      location: 'Unit OBABA',
       image: 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-slate-950/95 via-blood-950/80 to-slate-900/85',
-      linkText: 'Ajukan Butuh Darah',
+      linkText: 'Butuh Darah',
       action: 'request',
     },
     {
@@ -81,10 +80,10 @@ export const Home = () => {
       tag: 'Galeri Pahlawan Donor',
       title: 'Setetes Darah Kita, Sejuta Harapan Sesama',
       subtitle: 'Terima kasih atas ketulusan hati para pendonor sukarela yang telah menyelamatkan ribuan pasien.',
-      location: 'Unit Donor Darah PMI',
+      location: 'UDD PMI',
       image: 'https://images.unsplash.com/photo-1579152276508-410a56249be5?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-amber-950/95 via-slate-950/80 to-blood-950/85',
-      linkText: 'Lihat Galeri Foto',
+      linkText: 'Galeri Foto',
       linkUrl: '/gallery',
       isInternal: true,
     },
@@ -93,10 +92,10 @@ export const Home = () => {
       tag: 'Edukasi Kesehatan',
       title: 'Ayo Donor Darah Rutin Setiap 3 Bulan',
       subtitle: 'Tubuh lebih sehat, regenerasi sel darah baru, dan pahala kebaikan yang terus mengalir.',
-      location: 'Sentra Donor Darah Tangerang',
+      location: 'Sentra Tangerang',
       image: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-sky-950/95 via-slate-950/80 to-slate-900/85',
-      linkText: 'Baca Berita & Edukasi',
+      linkText: 'Edukasi Donor',
       linkUrl: '/activities',
       isInternal: true,
     },
@@ -287,17 +286,17 @@ export const Home = () => {
         </div>
       )}
 
-      {/* 2. Top 4 Quick Action Menu (Jadwal Donor, Donasi, Galeri Donor, Komunitas) */}
-      <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
+      {/* 2. Top Quick Action Menu (Mobile: Col 2, Tablet/Desktop: Col 4) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {/* Menu 1: Jadwal Donor */}
         <Link
           to="/schedules"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
+          className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blood-50 border border-blood-100/80 text-blood-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-blood-50 border border-blood-100/80 text-blood-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <Droplets className="w-6 h-6 fill-blood-600 text-blood-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
+          <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">
             Jadwal Donor
           </span>
         </Link>
@@ -305,12 +304,12 @@ export const Home = () => {
         {/* Menu 2: Donasi */}
         <Link
           to="/donations"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
+          className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 border border-sky-100/80 text-sky-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 border border-sky-100/80 text-sky-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <HeartHandshake className="w-6 h-6 text-sky-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
+          <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">
             Donasi
           </span>
         </Link>
@@ -318,12 +317,12 @@ export const Home = () => {
         {/* Menu 3: Galeri Donor */}
         <Link
           to="/gallery"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
+          className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-50 border border-amber-100/80 text-amber-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-amber-50 border border-amber-100/80 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <Camera className="w-6 h-6 text-amber-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
+          <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">
             Galeri Donor
           </span>
         </Link>
@@ -331,12 +330,12 @@ export const Home = () => {
         {/* Menu 4: Komunitas */}
         <Link
           to="/help"
-          className="group flex flex-col items-center justify-center p-3 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
+          className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all text-center"
         >
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-50 border border-purple-100/80 text-purple-600 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform shadow-xs">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-purple-50 border border-purple-100/80 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform shadow-xs">
             <Users className="w-6 h-6 text-purple-600" />
           </div>
-          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-slate-800 leading-tight">
+          <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">
             Komunitas
           </span>
         </Link>
@@ -367,7 +366,7 @@ export const Home = () => {
           onTouchEnd={handleTouchEnd}
         >
           {/* Slides */}
-          <div className="relative h-48 sm:h-64 md:h-72 w-full overflow-hidden">
+          <div className="relative h-56 sm:h-64 md:h-72 w-full overflow-hidden">
             {banners.map((banner, index) => (
               <div
                 key={banner.id}
@@ -385,7 +384,7 @@ export const Home = () => {
                 <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
 
                 {/* Banner Content */}
-                <div className="absolute inset-0 p-4 sm:p-7 flex flex-col justify-between text-white z-20">
+                <div className="absolute inset-0 p-4 sm:p-7 flex flex-col justify-between text-white z-20 overflow-hidden">
                   <div className="space-y-1.5 sm:space-y-2 max-w-xl">
                     <div className="inline-flex items-center space-x-1.5 bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-xs font-black uppercase px-2.5 py-0.5 rounded-full border border-white/20">
                       <Sparkles className="w-3 h-3 text-amber-300" />
@@ -401,16 +400,16 @@ export const Home = () => {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="flex items-center space-x-1.5 text-[11px] sm:text-xs text-slate-300 font-medium">
+                  <div className="flex items-center justify-between gap-2 pt-2">
+                    <div className="flex items-center space-x-1 text-[10px] sm:text-xs text-slate-300 font-medium min-w-0">
                       <MapPin className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
-                      <span className="truncate max-w-[180px] sm:max-w-none">{banner.location}</span>
+                      <span className="truncate">{banner.location}</span>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => handleBannerAction(banner)}
-                      className="py-1.5 px-3.5 sm:py-2 sm:px-5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all flex items-center space-x-1 flex-shrink-0"
+                      className="py-1.5 px-3 sm:py-2 sm:px-5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all flex items-center space-x-1 flex-shrink-0 whitespace-nowrap"
                     >
                       <span>{banner.linkText}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -421,12 +420,12 @@ export const Home = () => {
             ))}
           </div>
 
-          {/* Navigation Arrows (Desktop hover) */}
+          {/* Navigation Arrows (Desktop Only) */}
           <button
             type="button"
             onClick={handlePrevSlide}
             aria-label="Previous Slide"
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs"
+            className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -434,7 +433,7 @@ export const Home = () => {
             type="button"
             onClick={handleNextSlide}
             aria-label="Next Slide"
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs"
+            className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -502,8 +501,8 @@ export const Home = () => {
                   className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between"
                 >
                   <div>
-                    {/* Thumbnail Image with Rich Gradient Fallback */}
-                    <div className="relative aspect-[16/10] w-full bg-slate-900 overflow-hidden flex items-center justify-center">
+                    {/* Thumbnail Image with ImageOff Placeholder */}
+                    <div className="relative aspect-[16/10] w-full bg-slate-100 overflow-hidden flex items-center justify-center">
                       {imageUrl ? (
                         <img
                           src={imageUrl}
@@ -516,23 +515,21 @@ export const Home = () => {
                         />
                       ) : null}
 
-                      {/* Fallback branded banner when no image */}
+                      {/* Clean light fallback with ImageOff icon */}
                       <div
-                        className={`w-full h-full bg-gradient-to-br from-slate-850 via-blood-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center ${
+                        className={`w-full h-full bg-slate-50 flex flex-col items-center justify-center text-slate-400 space-y-1 ${
                           imageUrl ? 'hidden' : 'flex'
                         }`}
                       >
-                        <div className="w-10 h-10 rounded-xl bg-blood-600/30 border border-blood-500/30 flex items-center justify-center text-blood-400 mb-1.5">
-                          <Newspaper className="w-5 h-5" />
+                        <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-400">
+                          <ImageOff className="w-4 h-4" />
                         </div>
-                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                          Redor OBABA
-                        </span>
+                        <span className="text-[10px] font-medium text-slate-400">Tidak ada gambar</span>
                       </div>
 
                       {/* Category Tag */}
                       <div className="absolute top-2.5 left-2.5 z-10">
-                        <span className="bg-slate-950/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
+                        <span className="bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
                           {act.category || 'Berita'}
                         </span>
                       </div>
@@ -584,7 +581,7 @@ export const Home = () => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-2.5 left-2.5">
-                  <span className="bg-slate-950/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
+                  <span className="bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
                     Layanan Relawan
                   </span>
                 </div>
@@ -610,7 +607,7 @@ export const Home = () => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-2.5 left-2.5">
-                  <span className="bg-slate-950/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
+                  <span className="bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md shadow-xs">
                     Aksi Kemanusiaan
                   </span>
                 </div>
