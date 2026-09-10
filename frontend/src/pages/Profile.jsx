@@ -32,6 +32,23 @@ export const Profile = () => {
   const { user, logout, updateProfileState, fetchProfile, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  // Helper: Format Tanggal Lahir Aman
+  const formatBirthDate = (dateVal) => {
+    if (!dateVal) return '-';
+    try {
+      const dStr = typeof dateVal === 'string' ? dateVal.split('T')[0] : dateVal;
+      const parts = dStr.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      }
+      const d = new Date(dateVal);
+      return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) {
+      return '-';
+    }
+  };
+
   // Modals state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -40,16 +57,33 @@ export const Profile = () => {
   // Edit Profile Form
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
+    phone: user?.phone || '',
     email: user?.email || '',
     blood_type: user?.blood_type || 'A',
     rhesus: user?.rhesus || '+',
     birth_date: user?.birth_date ? user.birth_date.split('T')[0] : '',
     gender: user?.gender || 'L',
     address: user?.address || '',
-    city: user?.city || 'Kab. Tangerang',
+    city: user?.city || '',
     last_donation_date: user?.last_donation_date ? user.last_donation_date.split('T')[0] : '',
     status: user?.status || 'siap',
   });
+
+  const resetProfileForm = () => {
+    setProfileForm({
+      name: user?.name || '',
+      phone: user?.phone || '',
+      email: user?.email || '',
+      blood_type: user?.blood_type || 'A',
+      rhesus: user?.rhesus || '+',
+      birth_date: user?.birth_date ? user.birth_date.split('T')[0] : '',
+      gender: user?.gender || 'L',
+      address: user?.address || '',
+      city: user?.city || '',
+      last_donation_date: user?.last_donation_date ? user.last_donation_date.split('T')[0] : '',
+      status: user?.status || 'siap',
+    });
+  };
 
   // Change Password Form
   const [passwordForm, setPasswordForm] = useState({
@@ -145,24 +179,13 @@ export const Profile = () => {
         <button
           type="button"
           onClick={() => {
-            setProfileForm({
-              name: user?.name || '',
-              email: user?.email || '',
-              blood_type: user?.blood_type || 'A',
-              rhesus: user?.rhesus || '+',
-              birth_date: user?.birth_date ? user.birth_date.split('T')[0] : '',
-              gender: user?.gender || 'L',
-              address: user?.address || '',
-              city: user?.city || 'Kab. Tangerang',
-              last_donation_date: user?.last_donation_date ? user.last_donation_date.split('T')[0] : '',
-              status: user?.status || 'siap',
-            });
+            resetProfileForm();
             setIsEditProfileOpen(true);
           }}
-          className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
+          className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-blood-50 hover:bg-blood-100 text-blood-700 font-bold text-xs rounded-xl transition-colors border border-blood-200"
         >
           <Edit className="w-3.5 h-3.5" />
-          <span>Edit Data</span>
+          <span>Edit Profil</span>
         </button>
       </div>
 
@@ -179,9 +202,22 @@ export const Profile = () => {
 
       {/* 3. Detailed Profile Info Grid */}
       <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 space-y-4">
-        <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3">
-          Informasi Identitas Anggota
-        </h3>
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 className="text-base font-black text-slate-900">
+            Informasi Identitas Anggota
+          </h3>
+          <button
+            type="button"
+            onClick={() => {
+              resetProfileForm();
+              setIsEditProfileOpen(true);
+            }}
+            className="text-xs font-bold text-blood-600 hover:text-blood-700 hover:underline flex items-center space-x-1"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            <span>Ubah Data</span>
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
@@ -195,6 +231,11 @@ export const Profile = () => {
           </div>
 
           <div>
+            <span className="text-slate-400 font-semibold block text-[11px]">Email</span>
+            <span className="text-slate-800 font-semibold text-xs">{user?.email || '-'}</span>
+          </div>
+
+          <div>
             <span className="text-slate-400 font-semibold block text-[11px]">Golongan Darah & Rhesus</span>
             <span className="text-slate-800 font-bold text-sm">
               {user?.blood_type} ({user?.rhesus === '-' ? 'Rh-' : 'Rh+'})
@@ -203,37 +244,64 @@ export const Profile = () => {
 
           <div>
             <span className="text-slate-400 font-semibold block text-[11px]">Nomor ID Kartu Donor</span>
-            <span className="text-slate-800 font-bold text-sm">{user?.donor_card_no || '-'}</span>
+            <span className="text-slate-800 font-mono font-bold text-sm">{user?.donor_card_no || '-'}</span>
           </div>
 
           <div>
-            <span className="text-slate-400 font-semibold block text-[11px]">Tanggal Lahir / Usia</span>
+            <span className="text-slate-400 font-semibold block text-[11px]">Jenis Kelamin</span>
             <span className="text-slate-800 font-semibold text-xs">
-              {user?.birth_date ? new Date(user.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+              {user?.gender === 'P' ? 'Perempuan' : 'Laki-laki'}
+            </span>
+          </div>
+
+          <div>
+            <span className="text-slate-400 font-semibold block text-[11px]">Tanggal Lahir</span>
+            <span className="text-slate-800 font-semibold text-xs">
+              {formatBirthDate(user?.birth_date)}
             </span>
           </div>
 
           <div>
             <span className="text-slate-400 font-semibold block text-[11px]">Kota Domisili & Alamat</span>
-            <span className="text-slate-800 font-semibold text-xs">
-              {user?.address ? `${user.address}, ` : ''}{user?.city || 'Kab. Tangerang'}
+            <span className="text-slate-800 font-semibold text-xs leading-relaxed">
+              {user?.address ? `${user.address}${user?.city ? `, ${user.city}` : ''}` : (user?.city || '-')}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 4. Menu Navigasi Profil (Sesuai request client: Kartu donor, Riwayat donor, Kata sandi, Kritik & saran, Bantuan) */}
+      {/* 4. Menu Navigasi Profil */}
       <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
+        <button
+          type="button"
+          onClick={() => {
+            resetProfileForm();
+            setIsEditProfileOpen(true);
+          }}
+          className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-blood-50 text-blood-600 flex items-center justify-center">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900">1. Edit Data & Profil Anggota</p>
+              <p className="text-xs text-slate-500">Perbarui kontak WhatsApp, email, domisili, alamat & status kesiapan</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
         <Link
           to="/donor-card"
           className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
         >
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blood-50 text-blood-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">1. Kartu Donor Digital</p>
+              <p className="text-sm font-bold text-slate-900">2. Kartu Donor Digital</p>
               <p className="text-xs text-slate-500">Lihat kartu tanda anggota & barcode resmi</p>
             </div>
           </div>
@@ -249,7 +317,7 @@ export const Profile = () => {
               <History className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">2. Riwayat Donor Darah</p>
+              <p className="text-sm font-bold text-slate-900">3. Riwayat Donor Darah</p>
               <p className="text-xs text-slate-500">Catatan riwayat, lokasi, dan tanggal donasi</p>
             </div>
           </div>
@@ -266,7 +334,7 @@ export const Profile = () => {
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">3. Kata Sandi Akun</p>
+              <p className="text-sm font-bold text-slate-900">4. Kata Sandi Akun</p>
               <p className="text-xs text-slate-500">Ubah kata sandi keamanan akun Anda</p>
             </div>
           </div>
@@ -282,7 +350,7 @@ export const Profile = () => {
               <MessageSquare className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">4. Kritik & Saran</p>
+              <p className="text-sm font-bold text-slate-900">5. Kritik & Saran</p>
               <p className="text-xs text-slate-500">Kirim aspirasi untuk perbaikan komunitas</p>
             </div>
           </div>
@@ -298,7 +366,7 @@ export const Profile = () => {
               <HelpCircle className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">5. Panduan & Bantuan (FAQ)</p>
+              <p className="text-sm font-bold text-slate-900">6. Panduan & Bantuan (FAQ)</p>
               <p className="text-xs text-slate-500">Syarat donor, aturan komunitas, dan panduan</p>
             </div>
           </div>
@@ -320,10 +388,10 @@ export const Profile = () => {
       <Modal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
-        title="Edit Data Anggota / Donor"
+        title="Edit Data & Profil Anggota"
         maxWidth="max-w-lg"
       >
-        <form onSubmit={handleEditProfileSubmit} className="space-y-4 text-xs">
+        <form onSubmit={handleEditProfileSubmit} className="space-y-3.5 text-xs">
           <div>
             <label className="block font-bold text-slate-700 uppercase mb-1">Nama Lengkap</label>
             <input
@@ -335,18 +403,41 @@ export const Profile = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-slate-700 uppercase mb-1">Golongan Darah</label>
+              <label className="block font-bold text-slate-700 uppercase mb-1">Nomor WhatsApp</label>
+              <input
+                type="text"
+                value={profileForm.phone}
+                onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value }))}
+                required
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blood-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase mb-1">Email</label>
+              <input
+                type="email"
+                placeholder="nama@email.com"
+                value={profileForm.email}
+                onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blood-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase mb-1">Golongan</label>
               <select
                 value={profileForm.blood_type}
                 onChange={(e) => setProfileForm((prev) => ({ ...prev, blood_type: e.target.value }))}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
               >
-                <option value="A">Golongan A</option>
-                <option value="B">Golongan B</option>
-                <option value="AB">Golongan AB</option>
-                <option value="O">Golongan O</option>
+                <option value="A">Gol. A</option>
+                <option value="B">Gol. B</option>
+                <option value="AB">Gol. AB</option>
+                <option value="O">Gol. O</option>
               </select>
             </div>
 
@@ -355,15 +446,27 @@ export const Profile = () => {
               <select
                 value={profileForm.rhesus}
                 onChange={(e) => setProfileForm((prev) => ({ ...prev, rhesus: e.target.value }))}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
               >
                 <option value="+">Positif (+)</option>
                 <option value="-">Negatif (-)</option>
               </select>
             </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 uppercase mb-1">Gender</label>
+              <select
+                value={profileForm.gender}
+                onChange={(e) => setProfileForm((prev) => ({ ...prev, gender: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800"
+              >
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 uppercase mb-1">Tanggal Lahir</label>
               <input
@@ -385,6 +488,28 @@ export const Profile = () => {
           </div>
 
           <div>
+            <label className="block font-bold text-slate-700 uppercase mb-1">Kota / Domisili</label>
+            <input
+              type="text"
+              placeholder="Contoh: Kab. Tangerang / Cisauk"
+              value={profileForm.city}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, city: e.target.value }))}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase mb-1">Alamat Lengkap</label>
+            <textarea
+              rows="2"
+              placeholder="Alamat rumah / domisili lengkap..."
+              value={profileForm.address}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
+            />
+          </div>
+
+          <div>
             <label className="block font-bold text-slate-700 uppercase mb-1">Status Ketersediaan</label>
             <select
               value={profileForm.status}
@@ -397,28 +522,18 @@ export const Profile = () => {
             </select>
           </div>
 
-          <div>
-            <label className="block font-bold text-slate-700 uppercase mb-1">Kota / Domisili</label>
-            <input
-              type="text"
-              value={profileForm.city}
-              onChange={(e) => setProfileForm((prev) => ({ ...prev, city: e.target.value }))}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
-            />
-          </div>
-
           <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={() => setIsEditProfileOpen(false)}
-              className="py-2.5 px-4 bg-slate-100 text-slate-700 font-bold rounded-xl"
+              className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loadingUpdate}
-              className="py-2.5 px-5 bg-blood-600 hover:bg-blood-700 text-white font-bold rounded-xl shadow"
+              className="py-2.5 px-5 bg-blood-600 hover:bg-blood-700 text-white font-bold rounded-xl shadow disabled:opacity-50"
             >
               {loadingUpdate ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>

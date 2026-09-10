@@ -9,6 +9,8 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     PROFILE: '/auth/profile',
     PASSWORD: '/auth/password',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
   },
 
   DONORS: {
@@ -16,7 +18,16 @@ export const API_ENDPOINTS = {
     STOCK_SUMMARY: '/donors/stock-summary',
     DETAIL: (id) => `/donors/${id}`,
     UPDATE_STATUS: (id) => `/donors/${id}/status`,
+    VERIFY: (id) => `/donors/${id}/verify`,
     DELETE: (id) => `/donors/${id}`,
+  },
+
+  GALLERIES: {
+    LIST: '/galleries',
+    DETAIL: (id) => `/galleries/${id}`,
+    CREATE: '/galleries',
+    UPDATE: (id) => `/galleries/${id}`,
+    DELETE: (id) => `/galleries/${id}`,
   },
 
   BLOOD_REQUESTS: {

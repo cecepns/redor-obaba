@@ -3,7 +3,7 @@ import { api } from '../../utils/api';
 import { API_ENDPOINTS } from '../../utils/endpoints';
 import { useDebounce } from '../../hooks/useDebounce';
 import { usePagination } from '../../hooks/usePagination';
-import { Users, Search, Edit, Trash2, ShieldCheck, CheckCircle2, Phone, MapPin, Award } from 'lucide-react';
+import { Users, Search, Edit, Trash2, ShieldCheck, CheckCircle2, Phone, MapPin, Award, UserCheck, Clock } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
 import Skeleton from '../../components/common/Skeleton';
 import EmptyState from '../../components/common/EmptyState';
@@ -21,6 +21,7 @@ export const AdminDonors = () => {
   const debouncedSearch = useDebounce(search, 350);
   const [bloodTypeFilter, setBloodTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [verifiedFilter, setVerifiedFilter] = useState(''); // '' | '0' | '1'
 
   const { page, limit, total, totalPages, setPage, changeLimit, updatePagination } = usePagination(10);
 
@@ -37,7 +38,7 @@ export const AdminDonors = () => {
 
   useEffect(() => {
     fetchDonors();
-  }, [debouncedSearch, bloodTypeFilter, statusFilter, page, limit]);
+  }, [debouncedSearch, bloodTypeFilter, statusFilter, verifiedFilter, page, limit]);
 
   const fetchDonors = async () => {
     try {
@@ -48,6 +49,7 @@ export const AdminDonors = () => {
         search: debouncedSearch,
         blood_type: bloodTypeFilter,
         status: statusFilter,
+        is_verified: verifiedFilter,
       };
       const res = await api.get(API_ENDPOINTS.DONORS.LIST, { params });
       if (res.data?.success) {
@@ -58,6 +60,18 @@ export const AdminDonors = () => {
       console.error('Error fetching donors:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyDonor = async (donor) => {
+    try {
+      const res = await api.put(API_ENDPOINTS.DONORS.VERIFY(donor.id));
+      if (res.data?.success) {
+        toast.success(res.data.message || `Keanggotaan ${donor.name} berhasil di-ACC!`);
+        fetchDonors();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Gagal menyetujui keanggotaan.');
     }
   };
 
@@ -125,6 +139,56 @@ export const AdminDonors = () => {
 
       {/* Filter & Search Bar */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 space-y-4">
+        {/* Verification Status Tabs */}
+        <div className="flex items-center space-x-2 border-b border-slate-100 pb-3 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setVerifiedFilter('');
+              setPage(1);
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              verifiedFilter === ''
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Semua Anggota
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setVerifiedFilter('0');
+              setPage(1);
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
+              verifiedFilter === '0'
+                ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
+                : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Menunggu ACC Admin</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setVerifiedFilter('1');
+              setPage(1);
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
+              verifiedFilter === '1'
+                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20'
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Terverifikasi / Aktif</span>
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div className="relative sm:col-span-2">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -166,7 +230,7 @@ export const AdminDonors = () => {
               }}
               className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:bg-white focus:ring-2 focus:ring-blood-500 focus:outline-none"
             >
-              <option value="">Semua Status</option>
+              <option value="">Semua Status Donor</option>
               <option value="siap">🟢 Siap Donor</option>
               <option value="belum_bisa">⏳ Belum Bisa</option>
               <option value="tidak_tersedia">🔴 Tidak Tersedia</option>
@@ -187,7 +251,8 @@ export const AdminDonors = () => {
                   <th className="py-3 px-4 rounded-l-xl">Nama & ID Anggota</th>
                   <th className="py-3 px-4">Kontak WhatsApp</th>
                   <th className="py-3 px-4 text-center">Golongan</th>
-                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4 text-center">Status ACC</th>
+                  <th className="py-3 px-4 text-center">Kesiapan Donor</th>
                   <th className="py-3 px-4 text-center">Total Donasi</th>
                   <th className="py-3 px-4 text-right rounded-r-xl">Aksi</th>
                 </tr>
@@ -213,6 +278,19 @@ export const AdminDonors = () => {
                       {donor.blood_type} ({donor.rhesus === '-' ? 'Rh-' : 'Rh+'})
                     </td>
                     <td className="py-3.5 px-4 text-center">
+                      {donor.is_verified ? (
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                          <span>Terverifikasi</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                          <Clock className="w-3 h-3 text-amber-500" />
+                          <span>Menunggu ACC</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
                       <Badge variant={donor.status} size="sm" dot>
                         {donor.status === 'siap' ? 'Siap' : donor.status === 'belum_bisa' ? 'Belum Bisa' : 'Tidak Tersedia'}
                       </Badge>
@@ -222,6 +300,17 @@ export const AdminDonors = () => {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
+                        {!donor.is_verified && (
+                          <button
+                            type="button"
+                            onClick={() => handleVerifyDonor(donor)}
+                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1 shadow-sm transition-colors"
+                            title="ACC Anggota Ini"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>ACC</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleEditOpen(donor)}

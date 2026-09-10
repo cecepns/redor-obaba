@@ -34,6 +34,7 @@ import AdminSchedules from './pages/admin/AdminSchedules';
 import AdminHospitals from './pages/admin/AdminHospitals';
 import AdminFeedback from './pages/admin/AdminFeedback';
 import AdminWAGateway from './pages/admin/AdminWAGateway';
+import AdminGallery from './pages/admin/AdminGallery';
 
 // Protected Admin Route Helper
 const ProtectedAdminRoute = ({ children }) => {
@@ -123,6 +124,7 @@ export function App() {
             <Route path="donors" element={<AdminDonors />} />
             <Route path="requests" element={<AdminRequests />} />
             <Route path="activities" element={<AdminActivities />} />
+            <Route path="gallery" element={<AdminGallery />} />
             <Route path="schedules" element={<AdminSchedules />} />
             <Route path="hospitals" element={<AdminHospitals />} />
             <Route path="feedback" element={<AdminFeedback />} />

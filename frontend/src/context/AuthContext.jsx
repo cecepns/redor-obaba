@@ -58,11 +58,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post(API_ENDPOINTS.AUTH.REGISTER, formData);
       if (res.data?.success) {
-        localStorage.setItem('redor_obaba_token', res.data.token);
-        localStorage.setItem('redor_obaba_user', JSON.stringify(res.data.user));
-        setUser(res.data.user);
-        toast.success(res.data.message || 'Pendaftaran berhasil!');
-        return { success: true };
+        if (res.data.token && res.data.user?.is_verified) {
+          localStorage.setItem('redor_obaba_token', res.data.token);
+          localStorage.setItem('redor_obaba_user', JSON.stringify(res.data.user));
+          setUser(res.data.user);
+        }
+        toast.success(res.data.message || 'Pendaftaran berhasil diajukan!');
+        return { success: true, message: res.data.message, user: res.data.user };
       }
       return { success: false, message: res.data?.message };
     } catch (error) {

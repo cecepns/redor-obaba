@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Phone, Lock, Droplet, MapPin, Calendar, ArrowRight, ShieldCheck, HeartHandshake } from 'lucide-react';
+import { User, Phone, Lock, Droplet, MapPin, Calendar, ArrowRight, ShieldCheck, HeartHandshake, CheckCircle2, Clock } from 'lucide-react';
+import Modal from '../components/common/Modal';
 import toast from 'react-hot-toast';
 
 export const Register = () => {
@@ -17,12 +18,13 @@ export const Register = () => {
     rhesus: '+',
     birth_date: '',
     gender: 'L',
-    city: 'Kab. Tangerang',
+    city: '',
     address: '',
     last_donation_date: '',
   });
 
   const [loading, setLoading] = useState(false);
+  const [successData, setSuccessData] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,7 +42,7 @@ export const Register = () => {
     const result = await register(formData);
     setLoading(false);
     if (result.success) {
-      navigate('/donor-card');
+      setSuccessData(result.user || formData);
     }
   };
 
@@ -271,8 +273,65 @@ export const Register = () => {
           </Link>
         </div>
       </div>
+
+      {/* Modal Sukses Pendaftaran & Menunggu ACC Admin */}
+      <Modal
+        isOpen={!!successData}
+        onClose={() => navigate('/login')}
+        title="Pendaftaran Berhasil Diajukan"
+        maxWidth="max-w-md"
+      >
+        <div className="text-center space-y-4 py-2">
+          <div className="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+            <Clock className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="text-lg font-black text-slate-900">
+              Menunggu Persetujuan (ACC) Admin
+            </h3>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              Terima kasih <strong className="text-slate-800">{successData?.name}</strong>, formulir pendaftaran Anda telah diterima sistem Redor OBABA.
+            </p>
+          </div>
+
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-left space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Nomor Registrasi:</span>
+              <span className="font-mono font-bold text-slate-800">{successData?.donor_card_no || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">WhatsApp:</span>
+              <span className="font-semibold text-slate-800">{successData?.phone}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Golongan Darah:</span>
+              <span className="font-black text-blood-600">{successData?.blood_type}{successData?.rhesus}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Status Akun:</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                Menunggu ACC Admin
+              </span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            Admin akan memverifikasi keanggotaan Anda segera. Anda dapat melakukan login setelah akun disetujui (ACC).
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="w-full py-3 bg-blood-600 hover:bg-blood-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-blood-600/20 transition-all"
+          >
+            Menuju Halaman Masuk (Login)
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export default Register;
+

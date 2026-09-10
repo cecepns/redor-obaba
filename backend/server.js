@@ -15,6 +15,7 @@ const path = require('path');
 const fs = require('fs');
 const QRCode = require('qrcode');
 const pino = require('pino');
+const nodemailer = require('nodemailer');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 
 dotenv.config();
@@ -230,6 +231,88 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
+// Nodemailer Transporter (Hardcoded Gmail Sesuai Request Klien)
+const mailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'miftahudinkonselor@gmail.com',
+    pass: 'zefkwzksvcfhasrb',
+  },
+});
+
+// Helper: Inisialisasi Tabel Tambahan Jika Belum Ada
+async function initDatabaseTables() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS galleries (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        category ENUM('relawan', 'kegiatan', 'penghargaan', 'lainnya') NOT NULL DEFAULT 'kegiatan',
+        date VARCHAR(100) DEFAULT NULL,
+        location VARCHAR(200) DEFAULT NULL,
+        image VARCHAR(255) DEFAULT NULL,
+        description TEXT DEFAULT NULL,
+        donor_name VARCHAR(150) DEFAULT NULL,
+        blood_type VARCHAR(10) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(150) NOT NULL,
+        otp VARCHAR(10) NOT NULL,
+        token VARCHAR(255) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_pwd_resets_email (email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // Pastikan ada sample gallery jika tabel baru dibuat
+    const [galleryCount] = await pool.query('SELECT COUNT(*) as count FROM galleries');
+    if (galleryCount[0].count === 0) {
+      await pool.query(`
+        INSERT INTO galleries (id, title, category, date, location, image, description, donor_name, blood_type) VALUES
+        (1, 'Aksi Donor Darah Relawan OBABA Balaraja', 'kegiatan', '15 Agustus 2026', 'Balaraja, Kab. Tangerang', 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=800&q=80', 'Pendonor sukarela antusias mendonorkan darah demi menolong pasien darurat di RSUD Balaraja.', 'Relawan Redor OBABA', 'O+'),
+        (2, 'Aksi Tanggap Darurat PRC untuk Pasien Anak', 'relawan', '28 Juli 2026', 'Tigaraksa, Kab. Tangerang', 'https://images.unsplash.com/photo-1579152276508-410a56249be5?auto=format&fit=crop&w=800&q=80', 'Respons cepat relawan golongan darah A+ langsung mendonorkan darah di Unit Transfusi Darah.', 'Ahmad Fauzi & Tim', 'A+'),
+        (3, 'Sosialisasi & Donor Darah Bersama Pemuda Desa', 'kegiatan', '10 Juli 2026', 'Cikupa, Kab. Tangerang', 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=80', 'Edukasi pentingnya donor darah rutin dan pendaftaran 50 pendonor darah pemula baru.', 'Komunitas Pemuda Cikupa', 'B+'),
+        (4, 'Pemberian Apresiasi Pendonor Rutin Ke-10', 'penghargaan', '01 Juni 2026', 'Sekretariat Redor OBABA', 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=800&q=80', 'Penyerahan piagam terima kasih kepada pejuang kemanusiaan yang konsisten donor darah setiap 3 bulan.', 'Budi Santoso', 'AB+'),
+        (5, 'Mobil Unit Donor Darah Keliling', 'kegiatan', '20 Mei 2026', 'Pasar Kemis, Kab. Tangerang', 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80', 'Layanan jemput bola mobil donor darah bekerja sama dengan PMI untuk menjangkau masyarakat pelosok.', 'Tim Medis & Relawan', 'O-'),
+        (6, 'Relawan Donor Trombosit Apheresis', 'relawan', '05 Mei 2026', 'RSUD Kabupaten Tangerang', 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80', 'Dedikasi luar biasa relawan pendonor TC khusus untuk pasien demam berdarah kondisi kritis.', 'Siti Rahmawati', 'B+');
+      `);
+    }
+  } catch (err) {
+    console.error('[DB Init] Error checking database tables:', err.message);
+  }
+}
+
+// Helper: Nomor Anggota Sekuensial Dimulai dari 1 (obaba-1, obaba-2, ...)
+async function generateNextMemberNumber() {
+  try {
+    const [rows] = await pool.query(
+      "SELECT donor_card_no FROM users WHERE donor_card_no LIKE 'obaba-%' OR donor_card_no LIKE 'OBABA-%'"
+    );
+    let maxNum = 0;
+    for (const r of rows) {
+      if (r.donor_card_no) {
+        const match = r.donor_card_no.match(/obaba-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+    }
+    const nextNum = maxNum + 1;
+    return `obaba-${nextNum}`;
+  } catch (err) {
+    console.error('Error generating member number:', err);
+    return `obaba-1`;
+  }
+}
+
 // Helper: Response Pagination Formatter
 const formatPaginationResponse = (data, total, page, limit) => {
   const totalPages = Math.ceil(total / limit) || 1;
@@ -326,8 +409,17 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Nomor WhatsApp sudah terdaftar.' });
     }
 
+    // Check existing email if provided
+    if (email && email.trim()) {
+      const [existingEmail] = await pool.query('SELECT id FROM users WHERE email = ?', [email.trim()]);
+      if (existingEmail.length > 0) {
+        return res.status(400).json({ success: false, message: 'Email sudah terdaftar. Silakan gunakan email lain atau login.' });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const donorCardNo = 'OBABA-' + Math.floor(100000 + Math.random() * 900000);
+    // Nomor anggota dimulai dari obaba-1 (sekuensial sesuai request)
+    const donorCardNo = await generateNextMemberNumber();
 
     // Initial status based on last donation date
     let status = 'siap';
@@ -336,30 +428,40 @@ app.post('/api/auth/register', async (req, res) => {
       if (!eligibility.isEligible) status = 'belum_bisa';
     }
 
+    // Pendaftaran anggota baru wajib ACC Admin (is_verified = 0)
+    const is_verified = 0;
+
     const [result] = await pool.query(
-      `INSERT INTO users (name, phone, email, password, blood_type, rhesus, birth_date, gender, address, city, last_donation_date, status, donor_card_no)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, phone, email || null, hashedPassword, blood_type, rhesus || '+', birth_date || null, gender || 'L', address || null, city || 'Kab. Tangerang', last_donation_date || null, status, donorCardNo]
+      `INSERT INTO users (name, phone, email, password, blood_type, rhesus, birth_date, gender, address, city, last_donation_date, status, donor_card_no, is_verified)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name,
+        phone,
+        email ? email.trim() : null,
+        hashedPassword,
+        blood_type,
+        rhesus || '+',
+        birth_date || null,
+        gender || 'L',
+        address ? address.trim() : null,
+        city ? city.trim() : null,
+        last_donation_date || null,
+        status,
+        donorCardNo,
+        is_verified,
+      ]
     );
 
     const userId = result.insertId;
-    const token = jwt.sign({ id: userId, phone, role: 'member', name }, JWT_SECRET, { expiresIn: '7d' });
+
+    const [freshUsers] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    const user = freshUsers[0];
+    delete user.password;
 
     res.status(201).json({
       success: true,
-      message: 'Pendaftaran anggota berhasil! Selamat bergabung di Komunitas Redor OBABA.',
-      token,
-      user: {
-        id: userId,
-        name,
-        phone,
-        email,
-        blood_type,
-        rhesus: rhesus || '+',
-        role: 'member',
-        status,
-        donor_card_no: donorCardNo,
-      },
+      message: 'Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan (ACC) dari Admin Redor OBABA sebelum dapat login.',
+      user,
     });
   } catch (error) {
     console.error('Error register:', error);
@@ -377,17 +479,25 @@ app.post('/api/auth/login', async (req, res) => {
 
     const [users] = await pool.query(
       'SELECT * FROM users WHERE phone = ? OR email = ? LIMIT 1',
-      [identifier, identifier]
+      [identifier.trim(), identifier.trim()]
     );
 
     if (users.length === 0) {
-      return res.status(401).json({ success: false, message: 'Akun tidak ditemukan. Silakan periksa kembali no WhatsApp atau daftar.' });
+      return res.status(401).json({ success: false, message: 'Akun tidak ditemukan. Silakan periksa kembali no WhatsApp/email atau daftar.' });
     }
 
     const user = users[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Kata sandi tidak sesuai.' });
+    }
+
+    // Keanggotaan harus ACC Admin: cek is_verified jika role member
+    if (user.role === 'member' && (!user.is_verified || user.is_verified === 0)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Akun Anda masih menunggu persetujuan (ACC) dari Admin Redor OBABA. Silakan tunggu verifikasi admin atau hubungi sekretariat.',
+      });
     }
 
     // Recalculate status dynamically if last_donation_date exists
@@ -422,6 +532,114 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/forgot-password (Kirim OTP reset password via Gmail Nodemailer)
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Email akun anggota wajib diisi.' });
+    }
+
+    const [users] = await pool.query('SELECT id, name, email FROM users WHERE email = ? LIMIT 1', [email.trim()]);
+    if (users.length === 0) {
+      return res.status(404).json({ success: false, message: 'Email tidak ditemukan dalam sistem Redor OBABA.' });
+    }
+
+    const user = users[0];
+    // Generate 6 digit angka OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = jwt.sign({ email: user.email, otp }, JWT_SECRET, { expiresIn: '15m' });
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 menit
+
+    // Simpan ke tabel password_resets
+    await pool.query(
+      'INSERT INTO password_resets (email, otp, token, expires_at) VALUES (?, ?, ?, ?)',
+      [user.email, otp, token, expiresAt]
+    );
+
+    // Kirim email via Nodemailer
+    const mailOptions = {
+      from: '"Komunitas Redor OBABA" <miftahudinkonselor@gmail.com>',
+      to: user.email,
+      subject: '🔐 Kode Verifikasi Reset Kata Sandi - Redor OBABA',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #b91c1c; margin: 0; font-size: 24px; font-weight: 800;">REDOR OBABA</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">Komunitas Relawan Donor Darah Sukarela</p>
+          </div>
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 16px 0;" />
+          <p style="font-size: 15px; color: #1e293b; line-height: 1.5;">Halo <strong>${user.name}</strong>,</p>
+          <p style="font-size: 14px; color: #475569; line-height: 1.5;">Kami menerima permintaan untuk mereset kata sandi akun anggota Redor OBABA Anda. Masukkan kode verifikasi 6 digit berikut pada halaman reset kata sandi:</p>
+          <div style="text-align: center; margin: 26px 0;">
+            <span style="display: inline-block; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #dc2626; background: #fef2f2; padding: 14px 28px; border-radius: 12px; border: 2px dashed #f87171;">
+              ${otp}
+            </span>
+          </div>
+          <p style="font-size: 13px; color: #64748b; line-height: 1.4; text-align: center;">
+            Kode OTP ini berlaku selama <strong>15 menit</strong>. Jangan berikan kode ini kepada siapapun untuk menjaga keamanan akun Anda.
+          </p>
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;" />
+          <p style="font-size: 11px; color: #94a3b8; text-align: center; margin: 0;">
+            Jika Anda tidak meminta perubahan kata sandi, abaikan email ini. Akun Anda tetap terlindungi.<br/>
+            &copy; 2026 Komunitas Redor OBABA. Hak Cipta Dilindungi.
+          </p>
+        </div>
+      `,
+    };
+
+    try {
+      await mailTransporter.sendMail(mailOptions);
+    } catch (mailErr) {
+      console.error('[Nodemailer Send Error]:', mailErr);
+      return res.status(500).json({ success: false, message: 'Gagal mengirim email: ' + mailErr.message });
+    }
+
+    res.json({
+      success: true,
+      message: 'Kode verifikasi OTP telah dikirim ke email ' + user.email + '. Silakan periksa inbox/spam.',
+    });
+  } catch (error) {
+    console.error('Error forgot-password:', error);
+    res.status(500).json({ success: false, message: 'Gagal memproses permintaan reset password: ' + error.message });
+  }
+});
+
+// POST /api/auth/reset-password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, otp, new_password } = req.body;
+    if (!email || !otp || !new_password) {
+      return res.status(400).json({ success: false, message: 'Email, kode OTP, dan kata sandi baru wajib diisi.' });
+    }
+
+    if (new_password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Kata sandi baru minimal 6 karakter.' });
+    }
+
+    const [resets] = await pool.query(
+      'SELECT * FROM password_resets WHERE email = ? AND otp = ? AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
+      [email.trim(), otp.trim()]
+    );
+
+    if (resets.length === 0) {
+      return res.status(400).json({ success: false, message: 'Kode OTP salah atau telah kedaluwarsa. Silakan minta kode baru.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email.trim()]);
+    await pool.query('DELETE FROM password_resets WHERE email = ?', [email.trim()]);
+
+    res.json({
+      success: true,
+      message: 'Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.',
+    });
+  } catch (error) {
+    console.error('Error reset-password:', error);
+    res.status(500).json({ success: false, message: 'Gagal mereset kata sandi: ' + error.message });
+  }
+});
+
 // GET /api/auth/profile
 app.get('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
@@ -447,10 +665,26 @@ app.get('/api/auth/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/auth/profile
+// PUT /api/auth/profile (Fitur Edit Profile Anggota Lengkap)
 app.put('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
-    const { name, email, blood_type, rhesus, birth_date, gender, address, city, last_donation_date, status } = req.body;
+    const { name, phone, email, blood_type, rhesus, birth_date, gender, address, city, last_donation_date, status } = req.body;
+
+    // Check phone duplicate if updated
+    if (phone) {
+      const [existingPhone] = await pool.query('SELECT id FROM users WHERE phone = ? AND id != ?', [phone.trim(), req.user.id]);
+      if (existingPhone.length > 0) {
+        return res.status(400).json({ success: false, message: 'Nomor WhatsApp sudah digunakan oleh akun lain.' });
+      }
+    }
+
+    // Check email duplicate if updated
+    if (email && email.trim()) {
+      const [existingEmail] = await pool.query('SELECT id FROM users WHERE email = ? AND id != ?', [email.trim(), req.user.id]);
+      if (existingEmail.length > 0) {
+        return res.status(400).json({ success: false, message: 'Email sudah digunakan oleh akun lain.' });
+      }
+    }
 
     let newStatus = status;
     if (last_donation_date && status !== 'tidak_tersedia') {
@@ -461,17 +695,31 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     await pool.query(
       `UPDATE users SET
         name = COALESCE(?, name),
+        phone = COALESCE(?, phone),
         email = ?,
         blood_type = COALESCE(?, blood_type),
         rhesus = COALESCE(?, rhesus),
         birth_date = ?,
         gender = COALESCE(?, gender),
         address = ?,
-        city = COALESCE(?, city),
+        city = ?,
         last_donation_date = ?,
         status = COALESCE(?, status)
        WHERE id = ?`,
-      [name, email || null, blood_type, rhesus, birth_date || null, gender, address || null, city, last_donation_date || null, newStatus, req.user.id]
+      [
+        name || null,
+        phone ? phone.trim() : null,
+        email ? email.trim() : null,
+        blood_type || null,
+        rhesus || null,
+        birth_date || null,
+        gender || null,
+        address !== undefined ? (address ? address.trim() : null) : null,
+        city !== undefined ? (city ? city.trim() : null) : null,
+        last_donation_date || null,
+        newStatus || null,
+        req.user.id,
+      ]
     );
 
     const [updated] = await pool.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
@@ -481,7 +729,7 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Profil berhasil diperbarui.',
+      message: 'Profil anggota berhasil diperbarui!',
       data: {
         ...user,
         eligibility,
@@ -636,6 +884,11 @@ app.get('/api/donors', async (req, res) => {
       params.push(`%${city}%`);
     }
 
+    if (req.query.is_verified !== undefined && req.query.is_verified !== '') {
+      conditions.push('is_verified = ?');
+      params.push(parseInt(req.query.is_verified));
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Allowed sort columns
@@ -727,6 +980,38 @@ app.put('/api/donors/:id/status', authenticateToken, requireAdmin, async (req, r
   } catch (error) {
     console.error('Error update donor status:', error);
     res.status(500).json({ success: false, message: 'Gagal mengubah status donor.' });
+  }
+});
+
+// PUT /api/donors/:id/verify (Admin ACC Keanggotaan Anggota / Donor)
+app.put('/api/donors/:id/verify', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const donorId = req.params.id;
+    const [donors] = await pool.query('SELECT * FROM users WHERE id = ?', [donorId]);
+    if (donors.length === 0) {
+      return res.status(404).json({ success: false, message: 'Data anggota tidak ditemukan.' });
+    }
+
+    const donor = donors[0];
+    let donorCardNo = donor.donor_card_no;
+    // Jika belum punya nomor obaba-X atau masih random lama, assign nomor sekuensial
+    if (!donorCardNo || !donorCardNo.toLowerCase().startsWith('obaba-')) {
+      donorCardNo = await generateNextMemberNumber();
+    }
+
+    await pool.query(
+      'UPDATE users SET is_verified = 1, donor_card_no = ? WHERE id = ?',
+      [donorCardNo, donorId]
+    );
+
+    res.json({
+      success: true,
+      message: `Keanggotaan ${donor.name} berhasil di-ACC dan diaktifkan dengan No. Anggota ${donorCardNo}!`,
+      donor_card_no: donorCardNo,
+    });
+  } catch (error) {
+    console.error('Error verify donor:', error);
+    res.status(500).json({ success: false, message: 'Gagal menyetujui keanggotaan: ' + error.message });
   }
 });
 
@@ -1750,6 +2035,174 @@ app.delete('/api/feedbacks/:id', authenticateToken, requireAdmin, async (req, re
 });
 
 // ==========================================
+// ROUTES: GALLERIES (DOKUMENTASI FOTO RELAWAN)
+// ==========================================
+
+// GET /api/galleries (Public & Admin with pagination, search, category filter)
+app.get('/api/galleries', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+    const category = req.query.category || '';
+
+    let whereConditions = [];
+    let params = [];
+
+    if (search && search.trim()) {
+      whereConditions.push('(title LIKE ? OR description LIKE ? OR location LIKE ? OR donor_name LIKE ?)');
+      const s = `%${search.trim()}%`;
+      params.push(s, s, s, s);
+    }
+
+    if (category && category !== 'semua') {
+      whereConditions.push('category = ?');
+      params.push(category);
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    const [countResult] = await pool.query(`SELECT COUNT(id) as total FROM galleries ${whereClause}`, params);
+    const total = countResult[0].total;
+
+    const [rows] = await pool.query(
+      `SELECT * FROM galleries ${whereClause} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    res.json(formatPaginationResponse(rows, total, page, limit));
+  } catch (error) {
+    console.error('Error get galleries:', error);
+    res.status(500).json({ success: false, message: 'Gagal mengambil data galeri: ' + error.message });
+  }
+});
+
+// GET /api/galleries/:id
+app.get('/api/galleries/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM galleries WHERE id = ?', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Foto dokumentasi galeri tidak ditemukan.' });
+    }
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error get gallery detail:', error);
+    res.status(500).json({ success: false, message: 'Gagal memuat foto galeri.' });
+  }
+});
+
+// POST /api/galleries (Admin create gallery with image upload)
+app.post('/api/galleries', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const { title, category, date, location, description, donor_name, blood_type, image_url } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Judul dokumentasi galeri wajib diisi.' });
+    }
+
+    let finalImage = null;
+    if (req.file) {
+      finalImage = `/uploads-redor-obaba/${req.file.filename}`;
+    } else if (image_url && image_url.trim()) {
+      finalImage = image_url.trim();
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO galleries (title, category, date, location, image, description, donor_name, blood_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        title.trim(),
+        category || 'kegiatan',
+        date ? date.trim() : null,
+        location ? location.trim() : null,
+        finalImage,
+        description ? description.trim() : null,
+        donor_name ? donor_name.trim() : null,
+        blood_type ? blood_type.trim() : null,
+      ]
+    );
+
+    const [created] = await pool.query('SELECT * FROM galleries WHERE id = ?', [result.insertId]);
+    res.status(201).json({
+      success: true,
+      message: 'Foto dokumentasi berhasil ditambahkan ke galeri!',
+      data: created[0],
+    });
+  } catch (error) {
+    console.error('Error create gallery:', error);
+    res.status(500).json({ success: false, message: 'Gagal menambahkan dokumentasi galeri: ' + error.message });
+  }
+});
+
+// PUT /api/galleries/:id (Admin update gallery)
+app.put('/api/galleries/:id', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const { title, category, date, location, description, donor_name, blood_type, image_url } = req.body;
+    const [existing] = await pool.query('SELECT * FROM galleries WHERE id = ?', [req.params.id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dokumentasi galeri tidak ditemukan.' });
+    }
+
+    let finalImage = existing[0].image;
+    if (req.file) {
+      finalImage = `/uploads-redor-obaba/${req.file.filename}`;
+    } else if (image_url !== undefined) {
+      finalImage = image_url ? image_url.trim() : null;
+    }
+
+    await pool.query(
+      `UPDATE galleries SET
+        title = COALESCE(?, title),
+        category = COALESCE(?, category),
+        date = ?,
+        location = ?,
+        image = ?,
+        description = ?,
+        donor_name = ?,
+        blood_type = ?
+       WHERE id = ?`,
+      [
+        title ? title.trim() : null,
+        category || null,
+        date !== undefined ? (date ? date.trim() : null) : null,
+        location !== undefined ? (location ? location.trim() : null) : null,
+        finalImage,
+        description !== undefined ? (description ? description.trim() : null) : null,
+        donor_name !== undefined ? (donor_name ? donor_name.trim() : null) : null,
+        blood_type !== undefined ? (blood_type ? blood_type.trim() : null) : null,
+        req.params.id,
+      ]
+    );
+
+    const [updated] = await pool.query('SELECT * FROM galleries WHERE id = ?', [req.params.id]);
+    res.json({
+      success: true,
+      message: 'Dokumentasi galeri berhasil diperbarui!',
+      data: updated[0],
+    });
+  } catch (error) {
+    console.error('Error update gallery:', error);
+    res.status(500).json({ success: false, message: 'Gagal memperbarui galeri: ' + error.message });
+  }
+});
+
+// DELETE /api/galleries/:id (Admin delete gallery)
+app.delete('/api/galleries/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [existing] = await pool.query('SELECT * FROM galleries WHERE id = ?', [req.params.id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dokumentasi galeri tidak ditemukan.' });
+    }
+
+    await pool.query('DELETE FROM galleries WHERE id = ?', [req.params.id]);
+    res.json({ success: true, message: 'Dokumentasi galeri berhasil dihapus.' });
+  } catch (error) {
+    console.error('Error delete gallery:', error);
+    res.status(500).json({ success: false, message: 'Gagal menghapus galeri.' });
+  }
+});
+
+// ==========================================
 // ROUTES: ANALYTICS & DASHBOARD STATS
 // ==========================================
 
@@ -2003,10 +2456,12 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`=========================================`);
   console.log(`🚀 Redor OBABA Server running on port ${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/`);
   console.log(`📁 Uploads dir: ${uploadDir}`);
   console.log(`=========================================`);
+  await initDatabaseTables();
 });
+
