@@ -206,7 +206,7 @@ export const Home = () => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5 truncate">
-                  ID: <span className="font-semibold text-slate-700">{user.donor_card_no || 'OBABA-DNR-001'}</span> • <span className="font-semibold text-blood-600">{user.total_donations || 0}x</span> Donor
+                  ID: <span className="font-semibold text-slate-700">{user.donor_card_no || '-'}</span> • <span className="font-semibold text-blood-600">{user.total_donations || 0}x</span> Donor
                 </p>
               </div>
             </div>

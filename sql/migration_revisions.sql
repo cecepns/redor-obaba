@@ -89,5 +89,14 @@ DELIMITER ;
 CALL `AddColumnIfNotExists`();
 DROP PROCEDURE IF EXISTS `AddColumnIfNotExists`;
 
+-- ----------------------------------------------------------
+-- 5. Rapikan Nomor Anggota Lama Menjadi Sekuensial obaba-1, obaba-2, dst
+-- ----------------------------------------------------------
+SET @num := 0;
+UPDATE `users` 
+SET `donor_card_no` = CONCAT('obaba-', (@num := @num + 1))
+WHERE `role` != 'admin' AND (`donor_card_no` IS NULL OR `donor_card_no` LIKE 'OBABA-%' OR `donor_card_no` REGEXP '^obaba-[0-9]{5,}$')
+ORDER BY `id` ASC;
+
 -- Selesai
 SELECT 'Migration completed successfully for REDOR OBABA' AS status;

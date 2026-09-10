@@ -284,6 +284,21 @@ async function initDatabaseTables() {
         (6, 'Relawan Donor Trombosit Apheresis', 'relawan', '05 Mei 2026', 'RSUD Kabupaten Tangerang', 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80', 'Dedikasi luar biasa relawan pendonor TC khusus untuk pasien demam berdarah kondisi kritis.', 'Siti Rahmawati', 'B+');
       `);
     }
+
+    // Auto-Migrasi & Perapihan: Konversi nomor anggota lama (6 digit random seperti OBABA-660269, obaba-660270) menjadi urut sekuensial obaba-1, obaba-2, ...
+    const [allMembers] = await pool.query(
+      "SELECT id, donor_card_no FROM users WHERE role != 'admin' ORDER BY id ASC"
+    );
+    let seq = 1;
+    for (const member of allMembers) {
+      const match = member.donor_card_no ? member.donor_card_no.match(/^obaba-(\d+)$/i) : null;
+      const num = match ? parseInt(match[1], 10) : null;
+      // Jika belum punya nomor, atau bukan 'obaba-X', atau merupakan 5-6 digit acak (>= 10000)
+      if (!num || num >= 10000 || !member.donor_card_no.startsWith('obaba-')) {
+        await pool.query('UPDATE users SET donor_card_no = ? WHERE id = ?', [`obaba-${seq}`, member.id]);
+      }
+      seq++;
+    }
   } catch (err) {
     console.error('[DB Init] Error checking database tables:', err.message);
   }
@@ -293,15 +308,18 @@ async function initDatabaseTables() {
 async function generateNextMemberNumber() {
   try {
     const [rows] = await pool.query(
-      "SELECT donor_card_no FROM users WHERE donor_card_no LIKE 'obaba-%' OR donor_card_no LIKE 'OBABA-%'"
+      "SELECT donor_card_no FROM users WHERE role != 'admin' AND donor_card_no IS NOT NULL"
     );
     let maxNum = 0;
     for (const r of rows) {
       if (r.donor_card_no) {
-        const match = r.donor_card_no.match(/obaba-(\d+)/i);
+        const match = r.donor_card_no.match(/^obaba-(\d+)$/i);
         if (match) {
           const num = parseInt(match[1], 10);
-          if (num > maxNum) maxNum = num;
+          // Abaikan jika angka 5-6 digit peninggalan generator acak lama (>= 10000)
+          if (num < 10000 && num > maxNum) {
+            maxNum = num;
+          }
         }
       }
     }

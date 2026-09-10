@@ -330,7 +330,7 @@ export const BloodStock = () => {
                       <h4 className="text-sm font-bold text-slate-900 truncate">{donor.name}</h4>
                       <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3 text-slate-400" />
-                        {donor.city || 'Kab. Tangerang'} • ID: {donor.donor_card_no || 'OBABA-DNR'}
+                        {donor.city || '-'} • ID: {donor.donor_card_no || '-'}
                       </p>
                     </div>
                   </div>
