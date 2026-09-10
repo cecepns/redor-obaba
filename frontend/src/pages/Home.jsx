@@ -50,8 +50,8 @@ export const Home = () => {
     broadcastText: '',
   });
 
-  // Curated Promos / Banners
-  const banners = [
+  // Fallback initial banners
+  const DEFAULT_BANNERS = [
     {
       id: 1,
       tag: 'HUT & Semangat Kemanusiaan',
@@ -60,9 +60,8 @@ export const Home = () => {
       location: 'Kab. Tangerang',
       image: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-blood-950/95 via-blood-900/80 to-slate-950/85',
-      linkText: 'Jadwal Donor',
-      linkUrl: '/schedules',
-      isInternal: true,
+      link_text: 'Jadwal Donor',
+      link_url: '/schedules',
     },
     {
       id: 2,
@@ -72,8 +71,8 @@ export const Home = () => {
       location: 'Unit OBABA',
       image: 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-slate-950/95 via-blood-950/80 to-slate-900/85',
-      linkText: 'Butuh Darah',
-      action: 'request',
+      link_text: 'Butuh Darah',
+      link_url: '/requests',
     },
     {
       id: 3,
@@ -83,9 +82,8 @@ export const Home = () => {
       location: 'UDD PMI',
       image: 'https://images.unsplash.com/photo-1579152276508-410a56249be5?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-amber-950/95 via-slate-950/80 to-blood-950/85',
-      linkText: 'Galeri Foto',
-      linkUrl: '/gallery',
-      isInternal: true,
+      link_text: 'Galeri Foto',
+      link_url: '/gallery',
     },
     {
       id: 4,
@@ -95,15 +93,28 @@ export const Home = () => {
       location: 'Sentra Tangerang',
       image: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1200&q=80',
       gradient: 'from-sky-950/95 via-slate-950/80 to-slate-900/85',
-      linkText: 'Edukasi Donor',
-      linkUrl: '/activities',
-      isInternal: true,
+      link_text: 'Edukasi Donor',
+      link_url: '/activities',
     },
   ];
 
+  const [banners, setBanners] = useState(DEFAULT_BANNERS);
+
   useEffect(() => {
+    fetchHomeBanners();
     fetchHomeActivities();
   }, []);
+
+  const fetchHomeBanners = async () => {
+    try {
+      const res = await api.get(API_ENDPOINTS.BANNERS.LIST);
+      if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        setBanners(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching banners:', error);
+    }
+  };
 
   // Auto-play timer for banner slider
   useEffect(() => {
@@ -157,10 +168,15 @@ export const Home = () => {
   };
 
   const handleBannerAction = (banner) => {
+    const targetUrl = banner.link_url || banner.linkUrl;
     if (banner.action === 'request') {
       setIsRequestModalOpen(true);
-    } else if (banner.linkUrl) {
-      navigate(banner.linkUrl);
+    } else if (targetUrl) {
+      if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+        window.open(targetUrl, '_blank');
+      } else {
+        navigate(targetUrl);
+      }
     }
   };
 
@@ -375,11 +391,23 @@ export const Home = () => {
                 }`}
               >
                 {/* Background Image */}
-                <img
-                  src={banner.image}
-                  alt={banner.title}
-                  className="w-full h-full object-cover"
-                />
+                {banner.image ? (
+                  <img
+                    src={banner.image}
+                    alt={banner.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-500"
+                  style={{ display: banner.image ? 'none' : 'flex' }}
+                >
+                  <ImageOff className="w-12 h-12 stroke-1 text-slate-600 mb-1" />
+                </div>
                 {/* Gradient Overlay */}
                 <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
 
@@ -411,7 +439,7 @@ export const Home = () => {
                       onClick={() => handleBannerAction(banner)}
                       className="py-1.5 px-3 sm:py-2 sm:px-5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all flex items-center space-x-1 flex-shrink-0 whitespace-nowrap"
                     >
-                      <span>{banner.linkText}</span>
+                      <span>{banner.link_text || banner.linkText || 'Lihat Detail'}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>

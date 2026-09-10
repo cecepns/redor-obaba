@@ -42,8 +42,32 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------------------------------------
--- 3. Data Awal Contoh untuk Galeri Kegiatan
+-- 3. Buat Tabel `banners` (Untuk Promo & Informasi Carousel Beranda)
 -- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `banners` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `tag` VARCHAR(100) NOT NULL DEFAULT 'Info OBABA',
+  `title` VARCHAR(255) NOT NULL,
+  `subtitle` TEXT DEFAULT NULL,
+  `location` VARCHAR(150) DEFAULT NULL,
+  `image` VARCHAR(255) DEFAULT NULL,
+  `gradient` VARCHAR(150) DEFAULT 'from-blood-950/95 via-blood-900/80 to-slate-950/85',
+  `link_text` VARCHAR(100) DEFAULT 'Lihat Detail',
+  `link_url` VARCHAR(255) DEFAULT '/schedules',
+  `is_active` TINYINT(1) DEFAULT 1,
+  `sort_order` INT DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------------------------------------
+-- 4. Data Awal Contoh untuk Galeri Kegiatan & Banner Promo
+-- ----------------------------------------------------------
+INSERT IGNORE INTO `banners` (`id`, `tag`, `title`, `subtitle`, `location`, `image`, `gradient`, `link_text`, `link_url`, `is_active`, `sort_order`) VALUES
+(1, 'HUT & Semangat Kemanusiaan', 'Dirgahayu Republik Indonesia Ke-81', 'Indonesia Berdaulat, Adil dan Makmur Bersama Aksi Donor Darah Relawan Redor OBABA', 'Kab. Tangerang', 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80', 'from-blood-950/95 via-blood-900/80 to-slate-950/85', 'Jadwal Donor', '/schedules', 1, 1),
+(2, 'Layanan Cepat Relawan', 'Layanan Pengantaran & Respons Darah JEKDON', 'Jejaring respon cepat butuh darah darurat berbasis komunitas siaga 24 jam gratis.', 'Unit OBABA', 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=1200&q=80', 'from-slate-950/95 via-blood-950/80 to-slate-900/85', 'Butuh Darah', '/requests', 1, 2),
+(3, 'Galeri Pahlawan Donor', 'Setetes Darah Kita, Sejuta Harapan Sesama', 'Terima kasih atas ketulusan hati para pendonor sukarela yang telah menyelamatkan ribuan pasien.', 'UDD PMI', 'https://images.unsplash.com/photo-1579152276508-410a56249be5?auto=format&fit=crop&w=1200&q=80', 'from-amber-950/95 via-slate-950/80 to-blood-950/85', 'Galeri Foto', '/gallery', 1, 3),
+(4, 'Edukasi Kesehatan', 'Ayo Donor Darah Rutin Setiap 3 Bulan', 'Tubuh lebih sehat, regenerasi sel darah baru, dan pahala kebaikan yang terus mengalir.', 'Sentra Tangerang', 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1200&q=80', 'from-sky-950/95 via-slate-950/80 to-slate-900/85', 'Edukasi Donor', '/activities', 1, 4);
 INSERT IGNORE INTO `galleries` (`id`, `title`, `category`, `date`, `location`, `image`, `description`, `donor_name`, `blood_type`) VALUES
 (1, 'Aksi Donor Darah Relawan OBABA Balaraja', 'kegiatan', '15 Agustus 2026', 'Balaraja, Kab. Tangerang', 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=800&q=80', 'Pendonor sukarela antusias mendonorkan darah demi menolong pasien darurat di RSUD Balaraja.', 'Relawan Redor OBABA', 'O+'),
 (2, 'Aksi Tanggap Darurat PRC untuk Pasien Anak', 'relawan', '28 Juli 2026', 'Tigaraksa, Kab. Tangerang', 'https://images.unsplash.com/photo-1579152276508-410a56249be5?auto=format&fit=crop&w=800&q=80', 'Respons cepat relawan golongan darah A+ langsung mendonorkan darah di Unit Transfusi Darah.', 'Ahmad Fauzi & Tim', 'A+'),

@@ -30,6 +30,15 @@ export const API_ENDPOINTS = {
     DELETE: (id) => `/galleries/${id}`,
   },
 
+  BANNERS: {
+    LIST: '/banners',
+    DETAIL: (id) => `/banners/${id}`,
+    CREATE: '/banners',
+    UPDATE: (id) => `/banners/${id}`,
+    DELETE: (id) => `/banners/${id}`,
+    TOGGLE: (id) => `/banners/${id}/toggle`,
+  },
+
   BLOOD_REQUESTS: {
     LIST: '/blood-requests',
     DETAIL: (id) => `/blood-requests/${id}`,

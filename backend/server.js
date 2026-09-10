@@ -285,6 +285,36 @@ async function initDatabaseTables() {
       `);
     }
 
+    // Inisialisasi Tabel Banners (Promo & Informasi Beranda)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS banners (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        tag VARCHAR(100) NOT NULL DEFAULT 'Info OBABA',
+        title VARCHAR(255) NOT NULL,
+        subtitle TEXT DEFAULT NULL,
+        location VARCHAR(150) DEFAULT NULL,
+        image VARCHAR(255) DEFAULT NULL,
+        gradient VARCHAR(150) DEFAULT 'from-blood-950/95 via-blood-900/80 to-slate-950/85',
+        link_text VARCHAR(100) DEFAULT 'Lihat Detail',
+        link_url VARCHAR(255) DEFAULT '/schedules',
+        is_active TINYINT(1) DEFAULT 1,
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    const [bannerCount] = await pool.query('SELECT COUNT(*) as count FROM banners');
+    if (bannerCount[0].count === 0) {
+      await pool.query(`
+        INSERT INTO banners (id, tag, title, subtitle, location, image, gradient, link_text, link_url, is_active, sort_order) VALUES
+        (1, 'HUT & Semangat Kemanusiaan', 'Dirgahayu Republik Indonesia Ke-81', 'Indonesia Berdaulat, Adil dan Makmur Bersama Aksi Donor Darah Relawan Redor OBABA', 'Kab. Tangerang', 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80', 'from-blood-950/95 via-blood-900/80 to-slate-950/85', 'Jadwal Donor', '/schedules', 1, 1),
+        (2, 'Layanan Cepat Relawan', 'Layanan Pengantaran & Respons Darah JEKDON', 'Jejaring respon cepat butuh darah darurat berbasis komunitas siaga 24 jam gratis.', 'Unit OBABA', 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=1200&q=80', 'from-slate-950/95 via-blood-950/80 to-slate-900/85', 'Butuh Darah', '/requests', 1, 2),
+        (3, 'Galeri Pahlawan Donor', 'Setetes Darah Kita, Sejuta Harapan Sesama', 'Terima kasih atas ketulusan hati para pendonor sukarela yang telah menyelamatkan ribuan pasien.', 'UDD PMI', 'https://images.unsplash.com/photo-1579152276508-410a56249be5?auto=format&fit=crop&w=1200&q=80', 'from-amber-950/95 via-slate-950/80 to-blood-950/85', 'Galeri Foto', '/gallery', 1, 3),
+        (4, 'Edukasi Kesehatan', 'Ayo Donor Darah Rutin Setiap 3 Bulan', 'Tubuh lebih sehat, regenerasi sel darah baru, dan pahala kebaikan yang terus mengalir.', 'Sentra Tangerang', 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1200&q=80', 'from-sky-950/95 via-slate-950/80 to-slate-900/85', 'Edukasi Donor', '/activities', 1, 4);
+      `);
+    }
+
     // Auto-Migrasi & Perapihan: Konversi nomor anggota lama (6 digit random seperti OBABA-660269, obaba-660270) menjadi urut sekuensial obaba-1, obaba-2, ...
     const [allMembers] = await pool.query(
       "SELECT id, donor_card_no FROM users WHERE role != 'admin' ORDER BY id ASC"
@@ -2217,6 +2247,262 @@ app.delete('/api/galleries/:id', authenticateToken, requireAdmin, async (req, re
   } catch (error) {
     console.error('Error delete gallery:', error);
     res.status(500).json({ success: false, message: 'Gagal menghapus galeri.' });
+  }
+});
+
+// ==========================================
+// ROUTES: BANNERS / PROMO & INFORMASI
+// ==========================================
+
+// GET /api/banners (Public for Homepage & Admin with pagination, search, status filter)
+app.get('/api/banners', async (req, res) => {
+  try {
+    const { page, limit, search, is_active } = req.query;
+
+    // Jika tanpa parameter pagination (panggilan publik frontend Homepage)
+    if (!page && !limit && !search && is_active === undefined) {
+      const [banners] = await pool.query(
+        'SELECT * FROM banners WHERE is_active = 1 ORDER BY sort_order ASC, id DESC'
+      );
+      return res.json({ success: true, data: banners });
+    }
+
+    // Panggilan admin panel dengan pagination & filter
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const offset = (pageNum - 1) * limitNum;
+
+    let query = 'SELECT * FROM banners WHERE 1=1';
+    let countQuery = 'SELECT COUNT(*) as total FROM banners WHERE 1=1';
+    const params = [];
+    const countParams = [];
+
+    if (search && search.trim() !== '') {
+      const s = `%${search.trim()}%`;
+      query += ' AND (title LIKE ? OR subtitle LIKE ? OR tag LIKE ? OR location LIKE ?)';
+      countQuery += ' AND (title LIKE ? OR subtitle LIKE ? OR tag LIKE ? OR location LIKE ?)';
+      params.push(s, s, s, s);
+      countParams.push(s, s, s, s);
+    }
+
+    if (is_active !== undefined && is_active !== '' && is_active !== 'all') {
+      const activeVal = parseInt(is_active) === 1 ? 1 : 0;
+      query += ' AND is_active = ?';
+      countQuery += ' AND is_active = ?';
+      params.push(activeVal);
+      countParams.push(activeVal);
+    }
+
+    query += ' ORDER BY sort_order ASC, id DESC LIMIT ? OFFSET ?';
+    params.push(limitNum, offset);
+
+    const [banners] = await pool.query(query, params);
+    const [countResult] = await pool.query(countQuery, countParams);
+    const total = countResult[0].total;
+
+    return res.json(formatPaginationResponse(banners, total, pageNum, limitNum));
+  } catch (error) {
+    console.error('Error fetching banners:', error);
+    res.status(500).json({ success: false, message: 'Gagal mengambil data banner promo.' });
+  }
+});
+
+// GET /api/banners/:id
+app.get('/api/banners/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM banners WHERE id = ?', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Banner promo tidak ditemukan.' });
+    }
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error fetching banner detail:', error);
+    res.status(500).json({ success: false, message: 'Gagal mengambil detail banner.' });
+  }
+});
+
+// POST /api/banners (Admin create banner with image upload)
+app.post('/api/banners', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const {
+      tag,
+      title,
+      subtitle,
+      location,
+      imageUrl,
+      gradient,
+      link_text,
+      link_url,
+      is_active,
+      sort_order,
+    } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Judul banner promo wajib diisi.' });
+    }
+
+    let imagePath = null;
+    if (req.file) {
+      imagePath = `/uploads-redor-obaba/${req.file.filename}`;
+    } else if (imageUrl && imageUrl.trim()) {
+      imagePath = imageUrl.trim();
+    }
+
+    const bannerTag = tag && tag.trim() ? tag.trim() : 'Info OBABA';
+    const bannerGradient = gradient && gradient.trim() ? gradient.trim() : 'from-blood-950/95 via-blood-900/80 to-slate-950/85';
+    const linkText = link_text && link_text.trim() ? link_text.trim() : 'Lihat Detail';
+    const linkUrl = link_url && link_url.trim() ? link_url.trim() : '/schedules';
+    const activeVal = is_active !== undefined ? (parseInt(is_active) === 1 ? 1 : 0) : 1;
+    const sortOrderVal = sort_order ? parseInt(sort_order) : 0;
+
+    const [result] = await pool.query(
+      `INSERT INTO banners (tag, title, subtitle, location, image, gradient, link_text, link_url, is_active, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        bannerTag,
+        title.trim(),
+        subtitle ? subtitle.trim() : null,
+        location ? location.trim() : 'Kab. Tangerang',
+        imagePath,
+        bannerGradient,
+        linkText,
+        linkUrl,
+        activeVal,
+        sortOrderVal,
+      ]
+    );
+
+    const [newBanner] = await pool.query('SELECT * FROM banners WHERE id = ?', [result.insertId]);
+
+    res.status(201).json({
+      success: true,
+      message: 'Banner promo berhasil ditambahkan.',
+      data: newBanner[0],
+    });
+  } catch (error) {
+    console.error('Error create banner:', error);
+    res.status(500).json({ success: false, message: 'Gagal menambahkan banner promo: ' + error.message });
+  }
+});
+
+// PUT /api/banners/:id (Admin update banner)
+app.put('/api/banners/:id', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      tag,
+      title,
+      subtitle,
+      location,
+      imageUrl,
+      gradient,
+      link_text,
+      link_url,
+      is_active,
+      sort_order,
+    } = req.body;
+
+    const [existing] = await pool.query('SELECT * FROM banners WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Banner promo tidak ditemukan.' });
+    }
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Judul banner promo wajib diisi.' });
+    }
+
+    let imagePath = existing[0].image;
+    if (req.file) {
+      imagePath = `/uploads-redor-obaba/${req.file.filename}`;
+    } else if (imageUrl && imageUrl.trim()) {
+      imagePath = imageUrl.trim();
+    }
+
+    const bannerTag = tag !== undefined ? (tag ? tag.trim() : 'Info OBABA') : existing[0].tag;
+    const bannerGradient = gradient !== undefined ? gradient : existing[0].gradient;
+    const linkText = link_text !== undefined ? link_text : existing[0].link_text;
+    const linkUrl = link_url !== undefined ? link_url : existing[0].link_url;
+    const activeVal = is_active !== undefined ? (parseInt(is_active) === 1 ? 1 : 0) : existing[0].is_active;
+    const sortOrderVal = sort_order !== undefined ? parseInt(sort_order) : existing[0].sort_order;
+
+    await pool.query(
+      `UPDATE banners SET 
+        tag = ?,
+        title = ?,
+        subtitle = ?,
+        location = ?,
+        image = ?,
+        gradient = ?,
+        link_text = ?,
+        link_url = ?,
+        is_active = ?,
+        sort_order = ?
+       WHERE id = ?`,
+      [
+        bannerTag,
+        title.trim(),
+        subtitle !== undefined ? (subtitle ? subtitle.trim() : null) : existing[0].subtitle,
+        location !== undefined ? (location ? location.trim() : null) : existing[0].location,
+        imagePath,
+        bannerGradient,
+        linkText,
+        linkUrl,
+        activeVal,
+        sortOrderVal,
+        id,
+      ]
+    );
+
+    const [updated] = await pool.query('SELECT * FROM banners WHERE id = ?', [id]);
+
+    res.json({
+      success: true,
+      message: 'Banner promo berhasil diperbarui.',
+      data: updated[0],
+    });
+  } catch (error) {
+    console.error('Error update banner:', error);
+    res.status(500).json({ success: false, message: 'Gagal memperbarui banner promo: ' + error.message });
+  }
+});
+
+// PATCH /api/banners/:id/toggle (Admin quick toggle active status)
+app.patch('/api/banners/:id/toggle', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [existing] = await pool.query('SELECT * FROM banners WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Banner promo tidak ditemukan.' });
+    }
+
+    const newActiveState = existing[0].is_active === 1 ? 0 : 1;
+    await pool.query('UPDATE banners SET is_active = ? WHERE id = ?', [newActiveState, id]);
+
+    res.json({
+      success: true,
+      message: `Banner berhasil ${newActiveState === 1 ? 'diaktifkan di beranda' : 'dinonaktifkan'}.`,
+      is_active: newActiveState,
+    });
+  } catch (error) {
+    console.error('Error toggle banner:', error);
+    res.status(500).json({ success: false, message: 'Gagal mengubah status banner.' });
+  }
+});
+
+// DELETE /api/banners/:id (Admin delete banner)
+app.delete('/api/banners/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [existing] = await pool.query('SELECT * FROM banners WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Banner promo tidak ditemukan.' });
+    }
+
+    await pool.query('DELETE FROM banners WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Banner promo berhasil dihapus.' });
+  } catch (error) {
+    console.error('Error delete banner:', error);
+    res.status(500).json({ success: false, message: 'Gagal menghapus banner promo.' });
   }
 });
 
