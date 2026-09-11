@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../utils/api';
+import { api, getAssetUrl } from '../../utils/api';
 import { API_ENDPOINTS } from '../../utils/endpoints';
 import { useDebounce } from '../../hooks/useDebounce';
 import { usePagination } from '../../hooks/usePagination';
@@ -100,7 +100,7 @@ export const AdminGallery = () => {
       image_url: item.image || '',
     });
     setImageFile(null);
-    setImagePreview(item.image || null);
+    setImagePreview(item.image ? getAssetUrl(item.image) : null);
     setIsModalOpen(true);
   };
 
@@ -262,12 +262,12 @@ export const AdminGallery = () => {
                 <div className="relative aspect-[16/10] bg-slate-100 flex items-center justify-center overflow-hidden">
                   {item.image ? (
                     <img
-                      src={item.image}
+                      src={getAssetUrl(item.image)}
                       alt={item.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
+                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                       }}
                     />
                   ) : null}

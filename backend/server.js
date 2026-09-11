@@ -48,7 +48,7 @@ async function initWhatsApp(force = false) {
       try {
         waSocket.ev.removeAllListeners();
         waSocket.end();
-      } catch (e) {}
+      } catch (e) { }
       waSocket = null;
     }
 
@@ -67,9 +67,9 @@ async function initWhatsApp(force = false) {
         for (const file of files) {
           try {
             fs.unlinkSync(path.join(AUTH_DIR, file));
-          } catch (err) {}
+          } catch (err) { }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
@@ -81,7 +81,7 @@ async function initWhatsApp(force = false) {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
       const v = await Promise.race([vPromise, timeoutPromise]);
       if (v?.version) version = v.version;
-    } catch (e) {}
+    } catch (e) { }
 
     const logger = pino({ level: 'silent' });
     const sock = makeWASocket({
@@ -126,7 +126,7 @@ async function initWhatsApp(force = false) {
           try {
             fs.rmSync(AUTH_DIR, { recursive: true, force: true });
             fs.mkdirSync(AUTH_DIR, { recursive: true });
-          } catch (rmErr) {}
+          } catch (rmErr) { }
           waQrCode = null;
         } else if (shouldReconnect) {
           clearTimeout(waReconnectTimer);
@@ -192,6 +192,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 app.use('/uploads-redor-obaba', express.static(uploadDir));
+app.use('/redor-obaba/uploads-redor-obaba', express.static(uploadDir));
 
 // Multer storage setup
 const storage = multer.diskStorage({
@@ -385,7 +386,7 @@ const calculateDonorEligibility = (lastDonationDate) => {
   const nextDate = new Date(lastDate);
   nextDate.setDate(nextDate.getDate() + 90); // 90 days interval (3 months)
   const today = new Date();
-  
+
   const diffTime = nextDate - today;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const isEligible = diffDays <= 0;
@@ -859,7 +860,7 @@ app.get('/api/donors/stock-summary', async (req, res) => {
     const stockData = bloodTypes.map((bt) => {
       const key = `${bt.blood_type}${bt.rhesus}`;
       const counts = summaryMap[key] || { total_registered: 0, ready_count: 0, resting_count: 0, unavailable_count: 0 };
-      
+
       let stockStatus = 'habis'; // 🔴
       if (counts.ready_count >= 5) {
         stockStatus = 'tersedia'; // 🟢
@@ -1189,7 +1190,7 @@ app.get('/api/blood-requests/:id', async (req, res) => {
 
     // Find compatible ready donors
     const compatibleTypes = getCompatibleBloodTypes(request.blood_type, request.rhesus);
-    
+
     // Construct query for compatible donors
     let typeConditions = compatibleTypes.map(() => '(blood_type = ? AND rhesus = ?)').join(' OR ');
     let typeParams = [];
@@ -1490,7 +1491,7 @@ KOMUNITAS REDOR OBABA
 Hubungan dengan pasien sebagai : ${request.cp_relation}
 ${request.emergency_note ? `\nCatatan Darurat: ${request.emergency_note}\n` : ''}
 ✅ Klik tautan berikut untuk konfirmasi kesediaan donor:
-${process.env.FRONTEND_URL || 'http://localhost:5173'}/confirm-request/${request.id}`;
+${process.env.FRONTEND_URL || 'https://redorobaba.id'}/confirm-request/${request.id}`;
 
     res.json({
       success: true,
@@ -2594,11 +2595,11 @@ app.post('/api/wa-gateway/disconnect', authenticateToken, requireAdmin, async (r
     if (waSocket) {
       try {
         await waSocket.logout();
-      } catch (e) {}
+      } catch (e) { }
       try {
         waSocket.ev.removeAllListeners();
         waSocket.end();
-      } catch (e) {}
+      } catch (e) { }
       waSocket = null;
     }
     waStatus = 'disconnected';
@@ -2608,7 +2609,7 @@ app.post('/api/wa-gateway/disconnect', authenticateToken, requireAdmin, async (r
     try {
       fs.rmSync(AUTH_DIR, { recursive: true, force: true });
       fs.mkdirSync(AUTH_DIR, { recursive: true });
-    } catch (e) {}
+    } catch (e) { }
 
     res.json({ success: true, message: 'WhatsApp Gateway berhasil diputuskan dan sesi dihapus.' });
   } catch (err) {

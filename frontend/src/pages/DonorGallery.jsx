@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../utils/api';
+import { api, getAssetUrl } from '../utils/api';
 import { API_ENDPOINTS } from '../utils/endpoints';
 import { Camera, Heart, Users, MapPin, Calendar, X, Sparkles, Award, ImageOff, User } from 'lucide-react';
 import Badge from '../components/common/Badge';
@@ -167,13 +167,13 @@ export const DonorGallery = () => {
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 flex items-center justify-center">
               {item.image ? (
                 <img
-                  src={item.image}
+                  src={getAssetUrl(item.image)}
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                   onError={(e) => {
                     e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
+                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                   }}
                 />
               ) : null}
@@ -247,12 +247,12 @@ export const DonorGallery = () => {
             <div className="relative aspect-video bg-slate-900 flex items-center justify-center overflow-hidden">
               {selectedPhoto.image ? (
                 <img
-                  src={selectedPhoto.image}
+                  src={getAssetUrl(selectedPhoto.image)}
                   alt={selectedPhoto.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
+                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                   }}
                 />
               ) : null}

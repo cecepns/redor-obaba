@@ -393,12 +393,12 @@ export const Home = () => {
                 {/* Background Image */}
                 {banner.image ? (
                   <img
-                    src={banner.image}
+                    src={getAssetUrl(banner.image)}
                     alt={banner.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
+                      if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                     }}
                   />
                 ) : null}

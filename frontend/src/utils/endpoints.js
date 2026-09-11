@@ -96,4 +96,12 @@ export const API_ENDPOINTS = {
     TEST_SEND: '/wa-gateway/test-send',
     BROADCAST_REQUEST: (id) => `/blood-requests/${id}/broadcast-wa`,
   },
+
+  UPLOADS: {
+    ASSET: (path) => getAssetUrl(path),
+    FILE: (filename) => getAssetUrl(filename ? `/uploads-redor-obaba/${filename.replace(/^\/+/, '')}` : ''),
+  },
 };
+
+export { getAssetUrl } from './api';
+

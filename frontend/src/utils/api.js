@@ -16,10 +16,18 @@ export const api = axios.create({
  * @returns {string}
  */
 export const getAssetUrl = (path) => {
-  if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const clean = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE_URL}${clean}`;
+  if (!path || typeof path !== 'string') return '';
+  if (
+    path.startsWith('http://') || 
+    path.startsWith('https://') || 
+    path.startsWith('data:') || 
+    path.startsWith('blob:')
+  ) {
+    return path;
+  }
+  const cleanBase = (API_BASE_URL || '').replace(/\/+$/, '');
+  const cleanPath = path.replace(/\\/g, '/').replace(/^\/+/, '/');
+  return cleanBase ? `${cleanBase}${cleanPath}` : cleanPath;
 };
 
 // Request Interceptor: Attach Auth Bearer Token if available

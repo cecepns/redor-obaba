@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { api } from '../../utils/api';
+import { api, getAssetUrl } from '../../utils/api';
 import { API_ENDPOINTS } from '../../utils/endpoints';
 import toast from 'react-hot-toast';
 import {
@@ -200,7 +200,7 @@ const AdminBanners = () => {
       sort_order: banner.sort_order || 0,
     });
     setImageFile(null);
-    setImagePreview(banner.image || null);
+    setImagePreview(banner.image ? getAssetUrl(banner.image) : null);
     setIsModalOpen(true);
   };
 
@@ -505,12 +505,12 @@ const AdminBanners = () => {
                         <div className="w-24 h-16 rounded-xl overflow-hidden bg-slate-900 flex-shrink-0 relative border border-slate-200">
                           {item.image ? (
                             <img
-                              src={item.image}
+                              src={getAssetUrl(item.image)}
                               alt={item.title}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
+                                if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                               }}
                             />
                           ) : null}
