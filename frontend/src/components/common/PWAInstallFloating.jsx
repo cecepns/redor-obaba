@@ -29,8 +29,8 @@ export const PWAInstallFloating = () => {
 
   return (
     <>
-      {/* Floating PWA Card (Mobile Only) */}
-      <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 animate-bounce-short">
+      {/* Floating PWA Card (Mobile Only - Positioned Above Bottom Navigation) */}
+      <div className="md:hidden fixed bottom-20 left-3 right-3 z-50 animate-bounce-short">
         <div className="bg-slate-900/95 text-white backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-slate-700/80 flex items-center justify-between gap-3.5 transition-all hover:border-blood-500/50">
           {/* Logo & Info */}
           <div className="flex items-center space-x-3 min-w-0">
