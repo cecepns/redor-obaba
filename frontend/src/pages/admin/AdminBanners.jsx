@@ -520,7 +520,7 @@ const AdminBanners = () => {
                           >
                             <ImageOff className="w-5 h-5 text-slate-300" />
                           </div>
-                          <div className={`absolute inset-0 bg-gradient-to-r ${item.gradient || 'from-blood-950/90 to-transparent'} opacity-80`} />
+                          <div className="absolute inset-0 bg-slate-950/40" />
                         </div>
 
                         {/* Title & Info */}
@@ -809,29 +809,7 @@ const AdminBanners = () => {
                 </div>
               </div>
 
-              {/* Row 5: Pilihan Gradasi Warna */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Tema Gradasi Warna Latar
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {GRADIENT_PRESETS.map((p) => (
-                    <button
-                      key={p.value}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, gradient: p.value })}
-                      className={`p-2 rounded-xl text-left border flex items-center space-x-2 transition-all ${
-                        formData.gradient === p.value
-                          ? 'border-blood-600 bg-blood-50/50 shadow-xs'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
-                    >
-                      <span className={`w-3.5 h-3.5 rounded-full ${p.colorClass} flex-shrink-0`} />
-                      <span className="text-[11px] font-bold text-slate-700 truncate">{p.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+
 
               {/* Row 6: Tombol Aksi & Link URL */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -894,9 +872,9 @@ const AdminBanners = () => {
               {/* Live Preview Card */}
               <div className="pt-2">
                 <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Preview Tampilan di Slider Beranda:
+                  Preview Tampilan di Slider Beranda (Overlay Tipis):
                 </span>
-                <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-slate-950 border border-slate-300 shadow-md">
+                <div className="relative rounded-2xl overflow-hidden aspect-[16/8] sm:aspect-[21/9] bg-slate-950 border border-slate-300 shadow-md">
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -909,27 +887,28 @@ const AdminBanners = () => {
                       <span className="text-xs">Foto Banner</span>
                     </div>
                   )}
-                  <div className={`absolute inset-0 bg-gradient-to-r ${formData.gradient}`} />
+                  {/* Thin Clean Overlay */}
+                  <div className="absolute inset-0 bg-slate-950/40" />
                   <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-between text-white z-10">
-                    <div className="space-y-1 max-w-sm">
+                    <div className="space-y-1.5 max-w-sm">
                       <div className="inline-flex items-center space-x-1 bg-white/20 backdrop-blur-xs text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
                         <Sparkles className="w-2.5 h-2.5 text-amber-300" />
                         <span>{formData.tag || 'Info OBABA'}</span>
                       </div>
-                      <h4 className="text-sm sm:text-base font-black leading-tight line-clamp-2">
+                      <h4 className="text-sm sm:text-base font-black leading-tight line-clamp-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                         {formData.title || 'Judul Banner Promo Anda'}
                       </h4>
-                      <p className="text-[11px] text-slate-200 line-clamp-1">
+                      <p className="text-[11px] text-slate-100 line-clamp-2 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                         {formData.subtitle || 'Deskripsi singkat banner promo...'}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] text-slate-300 flex items-center gap-1">
+                      <span className="text-[10px] text-slate-200 flex items-center gap-1 font-medium">
                         <MapPin className="w-3 h-3 text-rose-400" />
                         {formData.location || 'Kab. Tangerang'}
                       </span>
-                      <span className="bg-white text-slate-900 text-[11px] font-black px-3 py-1 rounded-lg">
+                      <span className="bg-white text-slate-900 text-[11px] font-black px-3 py-1 rounded-lg shadow-sm">
                         {formData.link_text || 'Lihat Detail'} →
                       </span>
                     </div>

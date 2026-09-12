@@ -5,7 +5,6 @@ import { api } from '../utils/api';
 import { API_ENDPOINTS } from '../utils/endpoints';
 import { LogIn, Lock, Phone, Mail, ArrowRight, ShieldCheck, HeartHandshake, KeyRound, CheckCircle2, RotateCw } from 'lucide-react';
 import Modal from '../components/common/Modal';
-import PWAInstallFloating from '../components/common/PWAInstallFloating';
 import toast from 'react-hot-toast';
 
 export const Login = () => {
@@ -347,9 +346,6 @@ export const Login = () => {
           </form>
         )}
       </Modal>
-
-      {/* Floating PWA Install Widget */}
-      <PWAInstallFloating />
     </div>
   );
 };

@@ -36,6 +36,7 @@ import AdminFeedback from './pages/admin/AdminFeedback';
 import AdminWAGateway from './pages/admin/AdminWAGateway';
 import AdminGallery from './pages/admin/AdminGallery';
 import AdminBanners from './pages/admin/AdminBanners';
+import PWAInstallFloating from './components/common/PWAInstallFloating';
 
 // Protected Admin Route Helper
 const ProtectedAdminRoute = ({ children }) => {
@@ -136,6 +137,9 @@ export function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
+        {/* Global Floating PWA Install Widget (Mobile) */}
+        <PWAInstallFloating />
       </Router>
     </AuthProvider>
   );

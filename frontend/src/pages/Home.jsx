@@ -382,7 +382,7 @@ export const Home = () => {
           onTouchEnd={handleTouchEnd}
         >
           {/* Slides */}
-          <div className="relative h-56 sm:h-64 md:h-72 w-full overflow-hidden">
+          <div className="relative h-64 sm:h-72 md:h-80 lg:h-[340px] w-full overflow-hidden">
             {banners.map((banner, index) => (
               <div
                 key={banner.id}
@@ -408,22 +408,22 @@ export const Home = () => {
                 >
                   <ImageOff className="w-12 h-12 stroke-1 text-slate-600 mb-1" />
                 </div>
-                {/* Gradient Overlay */}
-                <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
+                {/* Thin Clean Dark Overlay (Replaces Heavy Gradients) */}
+                <div className="absolute inset-0 bg-slate-950/40" />
 
                 {/* Banner Content */}
-                <div className="absolute inset-0 p-4 sm:p-7 flex flex-col justify-between text-white z-20 overflow-hidden">
-                  <div className="space-y-1.5 sm:space-y-2 max-w-xl">
+                <div className="absolute inset-0 p-5 sm:p-8 flex flex-col justify-between text-white z-20 overflow-hidden">
+                  <div className="space-y-1.5 sm:space-y-2.5 max-w-xl">
                     <div className="inline-flex items-center space-x-1.5 bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-xs font-black uppercase px-2.5 py-0.5 rounded-full border border-white/20">
                       <Sparkles className="w-3 h-3 text-amber-300" />
                       <span>{banner.tag}</span>
                     </div>
 
-                    <h3 className="text-base sm:text-xl md:text-2xl font-black leading-tight tracking-tight text-white drop-shadow-sm line-clamp-2">
+                    <h3 className="text-base sm:text-xl md:text-2xl font-black leading-tight tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] line-clamp-2">
                       {banner.title}
                     </h3>
 
-                    <p className="text-xs sm:text-sm text-slate-200 line-clamp-2 font-normal leading-relaxed drop-shadow-xs">
+                    <p className="text-xs sm:text-sm text-slate-100 line-clamp-3 font-medium leading-relaxed drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                       {banner.subtitle}
                     </p>
                   </div>

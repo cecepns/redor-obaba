@@ -66,3 +66,57 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Print Rules - Only Print Donor Card Component */
+@media print {
+  @page {
+    size: auto;
+    margin: 8mm;
+  }
+
+  body {
+    background: white !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide app chrome: headers, navbars, footers, floating buttons, toasts, instructions */
+  header,
+  nav,
+  footer,
+  aside,
+  .no-print,
+  .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-wrapper {
+    display: block !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    margin: 20px auto !important;
+    padding: 0 !important;
+  }
+
+  .printable-card {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    margin: 0 auto !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 24px !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+}
+
